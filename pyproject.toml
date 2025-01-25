@@ -1,0 +1,14 @@
+[project]
+name = "parrot-package"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "groq>=0.15.0",
+    "phidata>=2.7.9",
+    "psycopg2-binary>=2.9.10",
+    "rich>=13.9.4",
+    "sqlalchemy>=2.0.37",
+    "typer>=0.15.1",
+]
