@@ -10,18 +10,7 @@ from parrot import Parrot
 
 USER_DIR = os.path.expanduser("~/.parrot")
 API_KEYS_FILE = os.path.join(USER_DIR, "api_keys.json")
-print(USER_DIR)
-def get_connection_params() -> Dict[str, str]:
-    console = Console()
-    console.print("[bold blue]Interactive Database Configuration[/]")
 
-    return {
-        'host': Prompt.ask("PostgreSQL Host", default="172.17.0.4"),
-        'port': int(Prompt.ask("PostgreSQL Port", default="5432")),
-        'database': Prompt.ask("Database Name", default="netflix"),
-        'user': Prompt.ask("Database User", default="postgres"),
-        'password': Prompt.ask("Database Password", password=True, default="mysecretpassword")
-    }
 
 def get_model_config() -> Dict[str, str]:
     console = Console()
@@ -75,19 +64,9 @@ def main(
     api_key = api_keys[model]
 
     # Interactive connection params if not provided
-    if not all([host, port, database, user, password]):
-        connection_params = get_connection_params()
-    else:
-        connection_params = {
-            'host': host,
-            'port': port,
-            'database': database,
-            'user': user,
-            'password': password
-        }
 
     try:
-        parrot = Parrot(connection_params, model, api_key)
+        parrot = Parrot(api_key=api_key, model_name=model)
 
         parrot.interactive_query()
     except Exception as e:

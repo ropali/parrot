@@ -1,57 +1,121 @@
-import os
-
-from rich.console import Console
 from typing import Dict, List, Any
 
-from phi.agent import Agent
+from InquirerPy import inquirer
 from phi.model.groq import Groq
-from phi.tools.sql import SQLTools
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.text import Text
 
+from agents.sql_agent import SQLAgent
+
+
+class ModelLoader:
+    """
+    Class responsible for loading different models based on the model name.
+    """
+    @staticmethod
+    def load_model(model_name: str, api_key: str) -> Any:
+        if model_name.lower() == "groq":
+            return Groq(id="llama3-70b-8192", api_key=api_key)
+        else:
+            raise ValueError(f"Unsupported model: {model_name}")
+
+class AgentFactory:
+    """
+    Factory class to initialize the correct agent based on the data source type.
+    """
+    @staticmethod
+    def create_sql_agent(model: Any, connection_string: str) -> Any:
+        return SQLAgent(
+            model=model,
+            connection_string=connection_string
+        )
+
+    @staticmethod
+    def create_csv_agent(model: Any, file_path: str) -> Any:
+        # Placeholder for CSV agent implementation
+        raise NotImplementedError("CSVAgent is not implemented yet.")
+
+class ConnectionPrompter:
+    """
+    Class responsible for prompting the user for connection details based on the data source type.
+    """
+    @staticmethod
+    def get_sql_connection_details() -> str:
+        user = Prompt.ask("[blue]Database user[/]", default="postgres")
+        password = Prompt.ask("[blue]Database password[/]", password=False, default="mysecretpassword")
+        host = Prompt.ask("[blue]Database host[/]", default="172.17.0.4")
+        port = Prompt.ask("[blue]Database port[/]", default="5432")
+        database = Prompt.ask("[blue]Database name[/]", default="netflix")
+
+        return (
+            f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        )
+
+    @staticmethod
+    def get_csv_file_path() -> str:
+        return Prompt.ask("[blue]Enter the path to the CSV file[/]")
 
 class Parrot:
-    def __init__(self, connection_params: Dict[str, str], model: str, api_key: str):
-        self.connection_params = connection_params
+    """
+    Main class for the Parrot application, implementing the Facade design pattern to
+    abstract interaction with models and agents.
+    """
+    def __init__(self, api_key: str, model_name: str):
         self.console = Console()
-        os.environ["GROQ_API_KEY"] = api_key
-        self.groq_client = Groq(api_key=api_key)
 
-        connection_string = (
-            f"postgresql://{connection_params['user']}:"
-            f"{connection_params['password']}@"
-            f"{connection_params['host']}:"
-            f"{connection_params['port']}/"
-            f"{connection_params['database']}"
-        )
+        self.api_key = api_key
+        self.model_name = model_name.lower()
+        self.agent = None
 
-        self.agent = Agent(
-            model=Groq(id="llama3-70b-8192"),
-            markdown=False,
-            description="You are a data analyst.",
-            instructions=[
-                "For a given, search through the database schema to find out the tables to use.",
-                "Then convert the natural language query into a SQL query.",
-                "Analyse and execute the SQL query to answer the question.",
-                "Figure the out table names and column names to use in the query.",
-                "Don't add any additional information. Just answer the question.",
-            ],
-            tools=[SQLTools(db_url=connection_string)],
-            show_tool_calls=False,
-            add_datetime_to_instructions=False,
-        )
 
-    def execute_query(self, sql_query: str) -> List[Dict[str, Any]]:
-        return self.agent.run(sql_query)
+    def _get_data_source_type(self) -> str:
+        """
+        Prompt the user to select a data source type using a list with arrow key navigation.
+        """
+        data_source_type = inquirer.select(
+            message="Select data source type:",
+            choices=["SQL", "CSV"],
+            default="SQL",
+        ).execute()
+        return data_source_type.lower()
+
+    def initialize_agent(self):
+        """
+        Initialize the agent based on the data source type.
+        """
+        data_source_type = self._get_data_source_type()
+
+        model = ModelLoader.load_model(self.model_name, self.api_key)
+
+        if data_source_type == "sql":
+            connection_string = ConnectionPrompter.get_sql_connection_details()
+            self.agent = AgentFactory.create_sql_agent(model, connection_string)
+        elif data_source_type == "csv":
+            file_path = ConnectionPrompter.get_csv_file_path()
+            self.agent = AgentFactory.create_csv_agent(model, file_path)
+
+    def execute_query(self, query: str) -> List[Dict[str, Any]]:
+        """
+        Execute a query using the agent.
+        """
+        if not self.agent:
+            raise ValueError("Agent is not initialized.")
+
+        return self.agent.run(query)
 
     def interactive_query(self):
+        """
+        Start the interactive query mode, allowing users to input natural language queries.
+        """
         self.console.print(Panel.fit(
-            "[bold green]🦜 Parrot: Talk to your data![/]",
+            "[bold green]Parrot 🦜: Talk to your data![/]",
             title="Interactive Mode",
             border_style="bold blue",
         ))
+
+        self.initialize_agent()
 
         chat_history = []
 
