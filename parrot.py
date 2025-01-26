@@ -1,13 +1,11 @@
-from typing import Dict, List, Any
+from typing import Any
 
 from InquirerPy import inquirer
 from phi.model.groq import Groq
-from rich.console import Console
-from rich.panel import Panel
 from rich.prompt import Prompt
-from rich.text import Text
 
 from agents.sql_agent import SQLAgent
+from ui.chat_interface import ChatInterface
 
 
 class ModelLoader:
@@ -63,12 +61,10 @@ class Parrot:
     abstract interaction with models and agents.
     """
     def __init__(self, api_key: str, model_name: str):
-        self.console = Console()
 
         self.api_key = api_key
         self.model_name = model_name.lower()
         self.agent = None
-
 
     def _get_data_source_type(self) -> str:
         """
@@ -85,64 +81,29 @@ class Parrot:
         """
         Initialize the agent based on the data source type.
         """
-        data_source_type = self._get_data_source_type()
+        self.data_source_type = self._get_data_source_type()
 
         model = ModelLoader.load_model(self.model_name, self.api_key)
 
-        if data_source_type == "sql":
+        if self.data_source_type == "sql":
             connection_string = ConnectionPrompter.get_sql_connection_details()
             self.agent = AgentFactory.create_sql_agent(model, connection_string)
-        elif data_source_type == "csv":
+        elif self.data_source_type == "csv":
             file_path = ConnectionPrompter.get_csv_file_path()
             self.agent = AgentFactory.create_csv_agent(model, file_path)
 
-    def execute_query(self, query: str) -> List[Dict[str, Any]]:
+    def run_interface(self):
         """
-        Execute a query using the agent.
+        Launch the Textual-based chat interface.
         """
         if not self.agent:
             raise ValueError("Agent is not initialized.")
 
-        return self.agent.run(query)
+        app = ChatInterface(self.agent, data_source_type=self.data_source_type)
+        app.run()
 
-    def interactive_query(self):
-        """
-        Start the interactive query mode, allowing users to input natural language queries.
-        """
-        self.console.print(Panel.fit(
-            "[bold green]Parrot 🦜: Talk to your data![/]",
-            title="Interactive Mode",
-            border_style="bold blue",
-        ))
-
-        self.initialize_agent()
-
-        chat_history = []
-
-        while True:
-            try:
-                query = Prompt.ask("[green]Your natural language query[/]", default="exit")
-
-                if query.lower() in ['exit', 'quit', 'q']:
-                    break
-
-                chat_history.append(Text(f"[bold green]User:[/] {query}"))
-
-                results = self.execute_query(query)
-
-                if results:
-                    chat_history.append(Text(f"[bold blue]Parrot:[/] {results.content}"))
-                else:
-                    chat_history.append(Text("[bold yellow]Parrot:[/] No results found."))
-
-                self.console.print(Panel.fit(
-                    "\n".join(str(item) for item in chat_history),
-                    title="Chat History",
-                    border_style="bold blue"
-                ))
-
-            except KeyboardInterrupt:
-                self.console.print("\n[yellow]Operation cancelled.[/]")
-                continue
-            except Exception as e:
-                self.console.print(f"[bold red]Error: {e}[/]")
+# Example usage
+if __name__ == "__main__":
+    parrot = Parrot(api_key="your_api_key", model_name="groq")
+    parrot.initialize_agent()
+    parrot.run_interface()

@@ -11,5 +11,6 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "rich>=13.9.4",
     "sqlalchemy>=2.0.37",
+    "textual>=1.0.0",
     "typer>=0.15.1",
 ]

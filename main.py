@@ -68,7 +68,8 @@ def main(
     try:
         parrot = Parrot(api_key=api_key, model_name=model)
 
-        parrot.interactive_query()
+        parrot.initialize_agent()
+        parrot.run_interface()
     except Exception as e:
         console.print(f"[bold red]Connection Error: {e}[/]")
         raise typer.Abort()
