@@ -15,7 +15,6 @@ class ChatInterface:
         self.console = Console()
         self.chat_styler = StyledChatResponse(self.console)
 
-        # Your existing initialization
         self.agent = agent
         self.data_source_type = data_source_type
         self.chat_history = []
