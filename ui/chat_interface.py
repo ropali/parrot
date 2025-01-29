@@ -1,8 +1,9 @@
+import typer
 from rich.console import Console
-from rich.live import Live
 from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Prompt
-from rich.spinner import Spinner
+from rich.style import Style
 from rich.text import Text
 
 from ui.chat_reponse import StyledChatResponse
@@ -58,19 +59,11 @@ class ChatInterface:
             # Process the query with your agent
             result = self.agent.run(query)
 
-            # Extract content (adjust based on your agent's return type)
+            # Extract content
             if hasattr(result, 'content'):
                 response = result.content
             else:
                 response = str(result)
-
-            # For complex responses, you can use the multi-format approach
-            # Example of a complex response
-            complex_response = [
-                ('text', response),
-                # Optionally add code blocks or other content types
-                # ('code', 'def example_function():\n    pass')
-            ]
 
             # Add the Parrot's response with styling
             self.add_message(response, "Parrot")
@@ -88,7 +81,7 @@ class ChatInterface:
         Create and display the application header with rich styling.
         """
         header = Panel(
-            Text("Parrot 🦜: Talk to your data!", style="bold magenta", justify="center"),
+            Text("Parrot 🦜: Talk to your data!", style="bold cyan", justify="center"),
             style="blue",
             expand=True,
 
@@ -109,6 +102,9 @@ class ChatInterface:
             try:
                 user_query = Prompt.ask("[bold blue]>>>[/]", console=self.console)
 
+                if not user_query:
+                    continue
+
                 # Exit condition
                 if user_query.lower() in ['exit', 'quit', 'q']:
                     break
@@ -116,8 +112,13 @@ class ChatInterface:
                 # Add user message to history with styling
                 self.add_message(user_query, "You")
 
-                # Process the query with a loading spinner
-                with Live(Spinner("dots", "Processing..."), console=self.console, refresh_per_second=10):
+                with Progress(
+                        SpinnerColumn(style="dots2"),
+                        TextColumn("[progress.description]{task.description}",
+                                   style=Style(color=typer.colors.WHITE, italic=True)),
+                        transient=True,
+                ) as progress:
+                    progress.add_task(description="Processing...", total=None)
                     self.process_query(user_query)
 
                 # Render the updated chat history
@@ -128,7 +129,3 @@ class ChatInterface:
 
         # Farewell message
         self.console.print("[bold red]Goodbye! 👋[/]")
-
-# Example usage would look like:
-# chat = ChatInterface(agent, data_source_type)
-# chat.run()
