@@ -1,7 +1,9 @@
 from typing import Any
 
+import pandas as pd
 from phi.model.base import Model
 
+from agents.csv_agent import CSVAgent
 from agents.sql_agent import SQLAgent
 from prompter import ConnectionDetails, SQLConnectionDetails, CSVConnectionDetails
 
@@ -14,7 +16,7 @@ class AgentsFactory:
         if isinstance(connection_details, SQLConnectionDetails):
             return self.create_sql_agent(model, connection_details.to_connection_string())
         elif isinstance(connection_details, CSVConnectionDetails):
-            return self.create_csv_agent(connection_details.file_path)
+            return self.create_csv_agent(model, connection_details.file_path)
         else:
             raise ValueError(f"Unsupported agent type: {model}")
 
@@ -26,6 +28,9 @@ class AgentsFactory:
         )
 
 
-    def create_csv_agent(self, file_path: str) -> Any:
-        # Placeholder for CSV agent implementation
-        raise NotImplementedError("CSVAgent is not implemented yet.")
+    def create_csv_agent(self, model: Model, file_path: str) -> Any:
+
+        return CSVAgent(
+            model=model,
+            file_path=file_path
+        )
