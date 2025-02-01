@@ -10,13 +10,13 @@ from ui.chat_reponse import StyledChatResponse
 
 
 class ChatInterface:
-    def __init__(self, agent, data_source_type):
+    def __init__(self):
         # Initialize Rich console and chat styler
         self.console = Console()
         self.chat_styler = StyledChatResponse(self.console)
 
-        self.agent = agent
-        self.data_source_type = data_source_type
+        self.agent = None
+        self.data_source_type = None
         self.chat_history = []
 
     def add_message(self, message: str, sender: str):
@@ -87,10 +87,14 @@ class ChatInterface:
         )
         self.console.print(header)
 
-    def run(self):
+    def run(self, agent, data_source_type):
         """
         Main application loop with enhanced styling.
         """
+
+        self.agent = agent
+        self.data_source_type = data_source_type
+
         self.display_header()
 
         while True:

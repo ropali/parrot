@@ -1,6 +1,9 @@
+import functools
+import json
 import tempfile
 from dataclasses import dataclass
-from typing import Union
+from pathlib import Path
+from typing import Union, Dict, List, Any
 
 import httpx
 import typer
@@ -95,6 +98,8 @@ class ConnectionPrompter:
             raise ValueError(f"Unsupported data source type: {source_type}")
 
     def get_sql_connection_details(self) -> SQLConnectionDetails:
+        # TODO: Remove hardcoded defaults
+        # TODO: test the connection before returning
         return SQLConnectionDetails(
             user=Prompt.ask("[blue]Database user[/]", default="postgres"),
             password=Prompt.ask("[blue]Database password[/]", password=False, default="mysecretpassword"),
@@ -123,3 +128,85 @@ class DataSourcePrompter:
         ).execute()
 
         return data_source_type.lower()
+
+
+class ConfigPrompter:
+    """
+    A flexible configuration prompter that dynamically handles different provider configurations
+    based on a template structure.
+    """
+
+    def __init__(self):
+        self.template = json.loads(Path("llms.json").read_text())
+
+        self.required_fields = {
+            "api_key": self._prompt_api_key,
+            "endpoint": self._prompt_endpoint
+        }
+
+    def prompt(self) -> Dict[str, Prompt]:
+        """
+        Main method to handle the configuration flow.
+
+        Returns:
+            Dict containing the collected configuration
+        """
+        # Select provider
+        selected_provider = self._prompt_provider(self.template.keys())
+        provider_config = self.template[selected_provider]
+
+        # Initialize result with selected provider
+        prompts = {
+            "provider": selected_provider,
+        }
+
+        # Handle model selection if models exist
+        if provider_config.get("models"):
+            models = [m["name"] for m in provider_config["models"]]
+            if models:
+                prompts["model"] = self._prompt_model(models)
+
+        # Dynamically prompt for all required fields in the provider's config
+        for field, value in provider_config.items():
+            if field != "models" and field in self.required_fields:
+                prompts[field] = self.required_fields[field]()
+            elif field != "models" and value is not None:
+                prompts[field] = value
+
+        return prompts
+
+    def _prompt_provider(self, providers: List[str]) -> str:
+        """Prompt for LLM provider selection."""
+        return inquirer.select(
+            message="Select a LLM provider:",
+            choices=providers,
+            transformer=lambda result: result.title()
+        ).execute()
+
+    def _prompt_model(self, models: List[str]) -> str:
+        """Prompt for model selection."""
+        return inquirer.select(
+            message="Select a model:",
+            choices=models,
+            transformer=lambda result: result.title()
+        ).execute()
+
+    def _prompt_api_key(self, default: str = None) -> str:
+        """Prompt for API key."""
+        return Prompt.ask("Enter your API key", default=default)
+
+    def _prompt_endpoint(self, default: str = None) -> str:
+        """Prompt for endpoint URL."""
+        return Prompt.ask("Enter the endpoint URL", default=default)
+
+    def add_field_prompt(self, field_name: str, prompt_func: callable, default: str = None):
+        """
+        Add a new field prompt handler.
+
+        Args:
+            field_name: Name of the field in the template
+            prompt_func: Function that handles prompting for this field
+            default: Default value for the field
+        """
+        self.required_fields[field_name] = functools.partial(prompt_func, default=default)
+

@@ -1,0 +1,45 @@
+{
+  "groq": {
+    "api_key": null,
+    "models": [
+      {
+        "name": "llama3-70b-8192"
+      }
+    ]
+  },
+  "openai": {
+    "api_key": null,
+    "models": []
+  },
+  "claude": {
+    "api_key": null,
+    "models": [
+      {
+        "name": "sonnet-3.5"
+      },
+      {
+        "name": "haiku-3.5"
+      }
+    ]
+  },
+  "ollama": {
+    "endpoint": "http://localhost:11434",
+    "models": [
+      {
+        "name": "llama3.3"
+      },
+      {
+        "name": "deepseek-r1"
+      },
+      {
+        "name": "phi4"
+      },
+      {
+        "name": "mistral"
+      },
+      {
+        "name": "gemma2"
+      }
+    ]
+  }
+}
