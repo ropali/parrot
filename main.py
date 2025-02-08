@@ -1,10 +1,8 @@
 import os
-import json
-from typing import Optional, Dict
+from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.prompt import Prompt
 
 from config import Config
 from parrot import Parrot

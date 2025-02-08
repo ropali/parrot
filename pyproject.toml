@@ -10,6 +10,7 @@ dependencies = [
     "inquirerpy>=0.3.4",
     "pandas>=2.2.3",
     "phidata>=2.7.9",
+    "prompt-toolkit>=3.0.50",
     "psycopg2-binary>=2.9.10",
     "rich>=13.9.4",
     "sqlalchemy>=2.0.37",

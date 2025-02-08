@@ -125,6 +125,8 @@ class StyledChatResponse:
                 )
                 formatted_response.append('\n')
 
+
+
         return formatted_response
 
     def render(self, response: Union[str, List[Tuple[str, str]]]):

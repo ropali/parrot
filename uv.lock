@@ -38,7 +38,7 @@ name = "click"
 version = "8.1.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b9/2e/0090cbf739cee7d23781ad4b89a9894a41538e4fcf4c31dcdd705b78eb8b/click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a", size = 226593 }
 wheels = [
@@ -364,6 +364,7 @@ dependencies = [
     { name = "inquirerpy" },
     { name = "pandas" },
     { name = "phidata" },
+    { name = "prompt-toolkit" },
     { name = "psycopg2-binary" },
     { name = "rich" },
     { name = "sqlalchemy" },
@@ -378,6 +379,7 @@ requires-dist = [
     { name = "inquirerpy", specifier = ">=0.3.4" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "phidata", specifier = ">=2.7.9" },
+    { name = "prompt-toolkit", specifier = ">=3.0.50" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "rich", specifier = ">=13.9.4" },
     { name = "sqlalchemy", specifier = ">=2.0.37" },

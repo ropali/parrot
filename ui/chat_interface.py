@@ -1,12 +1,15 @@
 import typer
+from prompt_toolkit.formatted_text import FormattedText
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.prompt import Prompt
 from rich.style import Style
 from rich.text import Text
 
+from exporter import Exporter
 from ui.chat_reponse import StyledChatResponse
+from ui.help.help_display import HelpDisplay
+from ui.input_prompt import InputPrompt
 
 
 class ChatInterface:
@@ -37,8 +40,6 @@ class ChatInterface:
         """
         Render the entire chat history with rich styling.
         """
-        self.console.clear()
-        self.display_header()
 
         for sender, styled_message in self.chat_history:
             # Directly print the styled message
@@ -79,6 +80,9 @@ class ChatInterface:
         """
         Create and display the application header with rich styling.
         """
+
+        self.console.clear()
+
         header = Panel(
             Text("Parrot 🦜: Talk to your data!", style="bold cyan", justify="center"),
             style="blue",
@@ -87,11 +91,33 @@ class ChatInterface:
         )
         self.console.print(header)
 
+    def handle_command(self, cmd: str):
+        """
+        Handle special commands starting with '/'
+
+        This method processes command-line style instructions that provide
+        additional functionality like help, export, and quitting the application.
+        """
+        if cmd.startswith("/q"):
+            return False
+
+        if cmd.startswith("/?"):
+            # Create a styled header for the help section
+            help_display = HelpDisplay(self.console)
+            help_display.display_help()
+
+        if cmd.startswith("/export"):
+            export = Exporter(self.chat_history)
+
+            export.to_text(".")
+
+        return True
+
+
     def run(self, agent, data_source_type):
         """
-        Main application loop with enhanced styling.
+        Main application loop with enhanced styling and dynamic hint.
         """
-
         self.agent = agent
         self.data_source_type = data_source_type
 
@@ -101,16 +127,26 @@ class ChatInterface:
             # Render current chat history
             self.render_chat_history()
 
-            # Prompt for user input
             try:
-                user_query = Prompt.ask("[bold blue]>>>[/]", console=self.console)
+
+                user_query = InputPrompt().ask(">>> ", FormattedText([
+                    ('#949494 italic', 'Ask your question (/? for help)'),
+                ]))
+
 
                 if not user_query:
                     continue
 
+                response = self.handle_command(user_query)
+
+
                 # Exit condition
-                if user_query.lower() in ['exit', 'quit', 'q']:
+                if response is False:
                     break
+
+                if response is None:
+                    continue
+
 
                 # Add user message to history with styling
                 self.add_message(user_query, "You")
