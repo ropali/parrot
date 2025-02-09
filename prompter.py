@@ -3,7 +3,7 @@ import json
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union, Dict, List, Any
+from typing import Tuple, Union, Dict, List, Any
 
 import httpx
 import typer
@@ -13,6 +13,8 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, DownloadColumn, T
     BarColumn
 from rich.prompt import Prompt
 from rich.style import Style
+
+from exporter import ExportType
 
 
 @dataclass
@@ -210,3 +212,24 @@ class ConfigPrompter:
         """
         self.required_fields[field_name] = functools.partial(prompt_func, default=default)
 
+
+class ExportPrompter:
+    """
+    Class responsible for prompting the user to select a export type.
+    """
+
+    def prompt(self) -> Tuple[ExportType, str]:
+        export_type = inquirer.select(
+            message="Select export type:",
+            choices=["TEXT", "JSON", "CSV"],
+            default="TEXT",
+
+        ).execute()
+
+        export_type = ExportType[export_type]
+
+        # Ask file path
+        file_path = Prompt.ask("Enter the export file path")
+
+
+        return export_type, file_path

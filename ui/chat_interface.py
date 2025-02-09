@@ -7,9 +7,11 @@ from rich.style import Style
 from rich.text import Text
 
 from exporter import Exporter
+from prompter import ExportPrompter
 from ui.chat_reponse import StyledChatResponse
 from ui.help.help_display import HelpDisplay
 from ui.input_prompt import InputPrompt
+from data_models import Message, Conversation
 
 
 class ChatInterface:
@@ -20,7 +22,7 @@ class ChatInterface:
 
         self.agent = None
         self.data_source_type = None
-        self.chat_history = []
+        self.chat_history = Conversation()
 
     def add_message(self, message: str, sender: str):
         """
@@ -34,16 +36,16 @@ class ChatInterface:
         styled_message = self.chat_styler.create_message_text(message, sender)
 
         # Store the message in history
-        self.chat_history.append((sender, styled_message))
+        self.chat_history.append(Message(sender, styled_message))
 
     def render_chat_history(self):
         """
         Render the entire chat history with rich styling.
         """
 
-        for sender, styled_message in self.chat_history:
+        for message in self.chat_history:
             # Directly print the styled message
-            self.console.print(styled_message)
+            self.console.print(message.content)
 
     def process_query(self, query: str):
         """
@@ -60,7 +62,7 @@ class ChatInterface:
             result = self.agent.run(query)
 
             # Extract content
-            if hasattr(result, 'content'):
+            if hasattr(result, "content"):
                 response = result.content
             else:
                 response = str(result)
@@ -87,7 +89,6 @@ class ChatInterface:
             Text("Parrot 🦜: Talk to your data!", style="bold cyan", justify="center"),
             style="blue",
             expand=True,
-
         )
         self.console.print(header)
 
@@ -107,12 +108,14 @@ class ChatInterface:
             help_display.display_help()
 
         if cmd.startswith("/export"):
-            export = Exporter(self.chat_history)
+            export_type, file_path = ExportPrompter().prompt()
 
-            export.to_text(".")
+            exporter = Exporter(self.chat_history)
+            exporter.export(export_type, file_path)
+
+            return None
 
         return True
-
 
     def run(self, agent, data_source_type):
         """
@@ -129,16 +132,19 @@ class ChatInterface:
 
             try:
 
-                user_query = InputPrompt().ask(">>> ", FormattedText([
-                    ('#949494 italic', 'Ask your question (/? for help)'),
-                ]))
-
+                user_query = InputPrompt().ask(
+                    ">>> ",
+                    FormattedText(
+                        [
+                            ("#949494 italic", "Ask your question (/? for help)"),
+                        ]
+                    ),
+                )
 
                 if not user_query:
                     continue
 
                 response = self.handle_command(user_query)
-
 
                 # Exit condition
                 if response is False:
@@ -147,15 +153,16 @@ class ChatInterface:
                 if response is None:
                     continue
 
-
                 # Add user message to history with styling
                 self.add_message(user_query, "You")
 
                 with Progress(
-                        SpinnerColumn(style="dots2"),
-                        TextColumn("[progress.description]{task.description}",
-                                   style=Style(color=typer.colors.WHITE, italic=True)),
-                        transient=True,
+                    SpinnerColumn(style="dots2"),
+                    TextColumn(
+                        "[progress.description]{task.description}",
+                        style=Style(color=typer.colors.WHITE, italic=True),
+                    ),
+                    transient=True,
                 ) as progress:
                     progress.add_task(description="Processing...", total=None)
                     self.process_query(user_query)
