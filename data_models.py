@@ -1,18 +1,22 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Iterator, List
-
+from rich.text import Text
 
 @dataclass
 class Message:
     sender: str
-    content: str
+    content: Text
+    plain_content: str = field(init=False)
+
+    def __post_init__(self):
+        self.plain_content = self.content._text
 
     def __str__(self):
         return f"{self.sender}: {self.content}"
 
     def to_dict(self):
-        return {"sender": self.sender, "content": self.content}
+        return {"sender": self.sender, "content": self.plain_content}
 
 
 @dataclass
