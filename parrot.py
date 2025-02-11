@@ -2,7 +2,7 @@ from agents.factory import AgentsFactory
 from config import ProviderConfig
 from models import ModelLoader
 from prompter import ConnectionPrompter, DataSourcePrompter
-from ui.chat_interface import ChatInterface
+from interactive.chat_interface import ChatInterface
 
 
 class Parrot:
@@ -44,4 +44,4 @@ class Parrot:
             raise ValueError("Agent is not initialized.")
 
         app = ChatInterface()
-        app.run(self.agent, data_source_type=self.data_source_type)
+        app.run(self.agent)

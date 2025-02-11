@@ -6,6 +6,5 @@ class InputPrompt:
     def __init__(self):
         self.session = PromptSession()
 
-
     def ask(self, prompt: str, placeholder: FormattedText) -> str:
         return self.session.prompt(prompt, placeholder=placeholder)
