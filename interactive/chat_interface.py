@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
@@ -62,7 +61,7 @@ class ChatInterface:
 
     def add_message(self, message: str, sender: str) -> None:
         styled_message = self.chat_styler.create_message_text(message, sender)
-        new_message = Message(sender, styled_message)
+        new_message = Message(sender, styled_content=styled_message, raw_content=message)
         self.chat_history.append(new_message)
         self.notify_message_added(new_message)
 
@@ -153,4 +152,4 @@ class ChatInterface:
 
     def render_chat_history(self) -> None:
         for message in self.chat_history:
-            self.console.print(message.content)
+            self.console.print(message.styled_content)
