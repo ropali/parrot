@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import auto, Enum
 from typing import Optional, Any
 
+from rich.text import Text
+
 from exporter import Exporter
 from interactive.help.help_display import HelpDisplay
 from prompter import ExportPrompter
@@ -43,4 +45,5 @@ class ExportCommand(Command):
         export_type, file_path = ExportPrompter().prompt()
         exporter = Exporter(interface.chat_history)
         exporter.export(export_type, file_path)
+        interface.display_message(Text("Export completed.", style="italic dim"))
         return CommandResponse(CommandResult.SKIP)

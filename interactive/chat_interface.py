@@ -97,7 +97,6 @@ class ChatInterface:
         self.display_header()
 
         while True:
-            self.render_chat_history()
 
             try:
                 user_query = InputPrompt().ask(
@@ -120,6 +119,7 @@ class ChatInterface:
                     case CommandResult.CONTINUE:
                         self.add_message(user_query, "You")
                         self._process_with_progress(user_query)
+                        self.render_chat_history()
 
             except KeyboardInterrupt:
                 break
@@ -153,3 +153,6 @@ class ChatInterface:
     def render_chat_history(self) -> None:
         for message in self.chat_history:
             self.console.print(message.styled_content)
+
+    def display_message(self, message: Text) -> None:
+        self.console.print(message)

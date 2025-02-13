@@ -22,6 +22,7 @@ class CSVAgent:
             tools=[CsvTools(csvs=[csv_file])],
             show_tool_calls=False,
             add_datetime_to_instructions=False,
+            debug_mode=False
         )
 
     def run(self, input_text: str) -> RunResponse:

@@ -3,7 +3,7 @@ import json
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple, Union, Dict, List, Any
+from typing import Tuple, Union, Dict, List, Any, Type
 
 import httpx
 import typer
