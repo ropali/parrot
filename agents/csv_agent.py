@@ -3,6 +3,16 @@ from phi.model.base import Model
 from phi.run.response import RunResponse
 from phi.tools.csv_tools import CsvTools
 
+import logging
+
+# Remove existing handlers from the 'phi' logger
+phi_logger = logging.getLogger("phi")
+phi_logger.handlers.clear()  # This removes all handlers including RichHandler
+phi_logger.setLevel(logging.CRITICAL)  # Set to CRITICAL to suppress logs
+
+# Ensure 'rich' logs are also suppressed
+logging.getLogger("rich").setLevel(logging.CRITICAL)
+
 
 class CSVAgent:
     def __init__(self, model: Model, file_path: str):
