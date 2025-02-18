@@ -6,6 +6,8 @@ from phi.model.base import Model
 from agents.csv_agent import CSVAgent
 from agents.sql_agent import SQLAgent
 from prompter import ConnectionDetails, SQLConnectionDetails, CSVConnectionDetails
+from agents.parquet_agent import ParquetAgent
+from prompter import ParquetConnectionDetails
 
 
 class AgentsFactory:
@@ -17,6 +19,8 @@ class AgentsFactory:
             return self.create_sql_agent(model, connection_details.to_connection_string())
         elif isinstance(connection_details, CSVConnectionDetails):
             return self.create_csv_agent(model, connection_details.file_path)
+        elif isinstance(connection_details, ParquetConnectionDetails):
+            return self.create_parquet_agent(model, connection_details.file_path)
         else:
             raise ValueError(f"Unsupported agent type: {model}")
 
@@ -31,6 +35,12 @@ class AgentsFactory:
     def create_csv_agent(self, model: Model, file_path: str) -> Any:
 
         return CSVAgent(
+            model=model,
+            file_path=file_path
+        )
+
+    def create_parquet_agent(self, model: Model, file_path: str) -> Any:
+        return ParquetAgent(
             model=model,
             file_path=file_path
         )
