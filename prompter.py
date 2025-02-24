@@ -1,9 +1,9 @@
 import functools
 import json
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Tuple, Union, Dict, List, Any, Type
+from typing import Tuple, Union, Dict, List
 
 import httpx
 import typer
@@ -28,10 +28,10 @@ class SQLConnectionDetails:
     def to_connection_string(self) -> str:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
-
 @dataclass
-class CSVConnectionDetails:
+class FileConnectionDetails:
     file_path: str
+    extension: str
 
     def __post_init__(self):
 
@@ -64,7 +64,7 @@ class CSVConnectionDetails:
                         total_size = int(response.headers.get('content-length', 0))
                         task = progress.add_task(description="Downloading..", total=total_size or 1)
 
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=self.extension) as temp_file:
                             for chunk in response.iter_bytes(chunk_size=1024):
                                 temp_file.write(chunk)
                                 progress.update(task, advance=len(chunk))
@@ -81,9 +81,16 @@ class CSVConnectionDetails:
 
             raise typer.Exit()
 
+@dataclass
+class ParquetConnectionDetails(FileConnectionDetails):
+    extension: str = field(init=False, default=".parquet")
+
+@dataclass
+class CSVConnectionDetails(FileConnectionDetails):
+    extension: str = field(init=False, default=".csv")
 
 # TODO: Explore Python's Protocol to enforce a common interface for connection details
-ConnectionDetails = Union[SQLConnectionDetails, CSVConnectionDetails]
+ConnectionDetails = Union[SQLConnectionDetails, CSVConnectionDetails, ParquetConnectionDetails]
 
 
 class ConnectionPrompter:
@@ -96,6 +103,8 @@ class ConnectionPrompter:
             return self.get_sql_connection_details()
         elif source_type == "csv":
             return self.get_csv_file_path()
+        elif source_type == "parquet":
+            return self.get_parquet_file_path()
         else:
             raise ValueError(f"Unsupported data source type: {source_type}")
 
@@ -115,6 +124,11 @@ class ConnectionPrompter:
             file_path=Prompt.ask("[blue]Enter the path to the CSV file[/]")
         )
 
+    def get_parquet_file_path(self) -> ParquetConnectionDetails:
+        return ParquetConnectionDetails(
+            file_path=Prompt.ask("[blue]Enter the path to the parquet file[/]")
+        )
+
 
 class DataSourcePrompter:
     """
@@ -124,7 +138,7 @@ class DataSourcePrompter:
     def prompt(self) -> str:
         data_source_type = inquirer.select(
             message="Select data source type:",
-            choices=["SQL", "CSV"],
+            choices=["SQL", "CSV", "PARQUET"],
             default="SQL",
 
         ).execute()
