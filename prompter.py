@@ -3,7 +3,7 @@ import json
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Tuple, Union, Dict, List, Any, Type
+from typing import Tuple, Union, Dict, List
 
 import httpx
 import typer
@@ -31,7 +31,7 @@ class SQLConnectionDetails:
 @dataclass
 class FileConnectionDetails:
     file_path: str
-    suffix: str
+    extension: str
 
     def __post_init__(self):
 
@@ -64,7 +64,7 @@ class FileConnectionDetails:
                         total_size = int(response.headers.get('content-length', 0))
                         task = progress.add_task(description="Downloading..", total=total_size or 1)
 
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=self.suffix) as temp_file:
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=self.extension) as temp_file:
                             for chunk in response.iter_bytes(chunk_size=1024):
                                 temp_file.write(chunk)
                                 progress.update(task, advance=len(chunk))
@@ -83,11 +83,11 @@ class FileConnectionDetails:
 
 @dataclass
 class ParquetConnectionDetails(FileConnectionDetails):
-    suffix: str = field(init=False, default=".parquet")
+    extension: str = field(init=False, default=".parquet")
 
 @dataclass
 class CSVConnectionDetails(FileConnectionDetails):
-    suffix: str = field(init=False, default=".csv")
+    extension: str = field(init=False, default=".csv")
 
 # TODO: Explore Python's Protocol to enforce a common interface for connection details
 ConnectionDetails = Union[SQLConnectionDetails, CSVConnectionDetails, ParquetConnectionDetails]
@@ -138,7 +138,7 @@ class DataSourcePrompter:
     def prompt(self) -> str:
         data_source_type = inquirer.select(
             message="Select data source type:",
-            choices=["SQL", "CSV", "parquet"],
+            choices=["SQL", "CSV", "PARQUET"],
             default="SQL",
 
         ).execute()
