@@ -29,8 +29,6 @@ class Parrot:
 
         conn_details = conn_prompter.prompt(source_type=self.data_source_type)
 
-        print("Connection details: ", conn_details)
-
         self.agent = AgentsFactory().create(model, conn_details)
 
     def run(self):

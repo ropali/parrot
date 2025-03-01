@@ -5,6 +5,8 @@ from phi.tools.duckdb import DuckDbTools
 
 import logging
 
+from agents.prompts import DUCKDB_SYSTEM_PROMPT, SQL_SYSTEM_PROMPT
+
 # Remove existing handlers from the 'phi' logger
 phi_logger = logging.getLogger("phi")
 phi_logger.handlers.clear()  # This removes all handlers including RichHandler
@@ -33,6 +35,7 @@ class ParquetAgent:
                 "Don't add any additional information. Just answer the question.",
                 "If you can't answer the question, just say 'I don't know'.",
             ],
+            system_prompt=DUCKDB_SYSTEM_PROMPT,
             tools=[tool],
             show_tool_calls=False,
             add_datetime_to_instructions=False,

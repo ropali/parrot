@@ -5,6 +5,8 @@ from phi.tools.csv_tools import CsvTools
 
 import logging
 
+from agents.prompts import DUCKDB_SYSTEM_PROMPT, SQL_SYSTEM_PROMPT
+
 # Remove existing handlers from the 'phi' logger
 phi_logger = logging.getLogger("phi")
 phi_logger.handlers.clear()  # This removes all handlers including RichHandler
@@ -22,17 +24,16 @@ class CSVAgent:
         self._agent = Agent(
             model=model,
             markdown=False,
-            description="You are a data analyst.",
             instructions=[
                 "First always get the list of files",
                 "Then check the columns in the file",
                 "Then run the query to answer the question",
-                "If you can't answer the question, just say 'I don't know'.",
             ],
+            system_prompt=DUCKDB_SYSTEM_PROMPT,
             tools=[CsvTools(csvs=[csv_file])],
             show_tool_calls=False,
             add_datetime_to_instructions=False,
-            debug_mode=False
+            debug_mode=False,
         )
 
     def run(self, input_text: str) -> RunResponse:
