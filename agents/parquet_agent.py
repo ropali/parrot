@@ -5,7 +5,9 @@ from phi.tools.duckdb import DuckDbTools
 
 import logging
 
-from agents.prompts import DUCKDB_SYSTEM_PROMPT, SQL_SYSTEM_PROMPT
+from agents.base_agent import ParrotAgent
+from agents.prompts import DUCKDB_SYSTEM_PROMPT
+from agents.response import AgentResponse
 
 # Remove existing handlers from the 'phi' logger
 phi_logger = logging.getLogger("phi")
@@ -16,15 +18,19 @@ phi_logger.setLevel(logging.CRITICAL)  # Set to CRITICAL to suppress logs
 logging.getLogger("rich").setLevel(logging.CRITICAL)
 
 
-class ParquetAgent:
-    def __init__(self, model: Model, file_path: str):
-        self._init_agent(model, file_path)
+class ParquetAgent(ParrotAgent):
+    def __init__(self, model: Model, file_path: str) -> None:
+        self.file_path = file_path
+        self.model = model
+        self._agent = None
 
-    def _init_agent(self, model, parquet_file):
+        self.init_agent()
+
+    def init_agent(self) -> None:
         tool = DuckDbTools()
-        table_name, _ = tool.load_local_path_to_table(parquet_file)
+        table_name, _ = tool.load_local_path_to_table(self.file_path)
         self._agent = Agent(
-            model=model,
+            model=self.model,
             markdown=False,
             description="You are a data analyst.",
             instructions=[
@@ -39,8 +45,9 @@ class ParquetAgent:
             tools=[tool],
             show_tool_calls=False,
             add_datetime_to_instructions=False,
-            debug_mode=False
+            debug_mode=False,
         )
 
-    def run(self, input_text: str) -> RunResponse:
-        return self._agent.run(input_text)
+    def run(self, input_text: str) -> AgentResponse:
+        response: RunResponse = self._agent.run(input_text)
+        return AgentResponse(content=response.content, error=None, raw_input=input_text)

@@ -5,7 +5,8 @@ from phi.tools.csv_tools import CsvTools
 
 import logging
 
-from agents.prompts import DUCKDB_SYSTEM_PROMPT, SQL_SYSTEM_PROMPT
+from agents.base_agent import ParrotAgent
+from agents.prompts import DUCKDB_SYSTEM_PROMPT
 
 # Remove existing handlers from the 'phi' logger
 phi_logger = logging.getLogger("phi")
@@ -16,13 +17,17 @@ phi_logger.setLevel(logging.CRITICAL)  # Set to CRITICAL to suppress logs
 logging.getLogger("rich").setLevel(logging.CRITICAL)
 
 
-class CSVAgent:
-    def __init__(self, model: Model, file_path: str):
-        self._init_agent(model, file_path)
+class CSVAgent(ParrotAgent):
+    def __init__(self, model: Model, file_path: str) -> None:
+        self._agent = None
+        self.file_path = file_path
+        self.model = model
 
-    def _init_agent(self, model, csv_file):
+        self.init_agent()
+
+    def init_agent(self) -> None:
         self._agent = Agent(
-            model=model,
+            model=self.model,
             markdown=False,
             instructions=[
                 "First always get the list of files",
@@ -30,7 +35,7 @@ class CSVAgent:
                 "Then run the query to answer the question",
             ],
             system_prompt=DUCKDB_SYSTEM_PROMPT,
-            tools=[CsvTools(csvs=[csv_file])],
+            tools=[CsvTools(csvs=[self.file_path])],
             show_tool_calls=False,
             add_datetime_to_instructions=False,
             debug_mode=False,

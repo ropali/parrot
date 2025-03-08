@@ -17,3 +17,8 @@ dependencies = [
     "textual>=1.0.0",
     "typer>=0.15.1",
 ]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.1.0",
+]
