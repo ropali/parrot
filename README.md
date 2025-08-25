@@ -36,7 +36,7 @@ Parrot is a **terminal-based RAG + Agentic AI** tool that lets you interact with
    ```
 3. Install dependencies:  
    ```bash
-   uv sync   # Or use `pip install -r requirements.txt`
+   uv sync 
    ```
 
 

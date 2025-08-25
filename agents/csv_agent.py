@@ -3,10 +3,11 @@ from phi.model.base import Model
 from phi.run.response import RunResponse
 from phi.tools.csv_tools import CsvTools
 
+import pandas as pd
 import logging
 
 from agents.base_agent import ParrotAgent
-from agents.prompts import DUCKDB_SYSTEM_PROMPT
+from agents.prompts import SQL_SYSTEM_PROMPT
 
 # Remove existing handlers from the 'phi' logger
 phi_logger = logging.getLogger("phi")
@@ -22,8 +23,17 @@ class CSVAgent(ParrotAgent):
         self._agent = None
         self.file_path = file_path
         self.model = model
-
         self.init_agent()
+
+    def _get_df(self) -> pd.DataFrame:
+        return pd.read_csv(self.file_path)
+
+    def _prepare_prompt(self) -> str:
+        prepared_prompt = SQL_SYSTEM_PROMPT.replace(
+            "$HEAD", self._get_df().head().to_string(index=False)
+        )
+
+        return prepared_prompt
 
     def init_agent(self) -> None:
         self._agent = Agent(
@@ -34,7 +44,7 @@ class CSVAgent(ParrotAgent):
                 "Then check the columns in the file",
                 "Then run the query to answer the question",
             ],
-            system_prompt=DUCKDB_SYSTEM_PROMPT,
+            system_prompt=self._prepare_prompt(),
             tools=[CsvTools(csvs=[self.file_path])],
             show_tool_calls=False,
             add_datetime_to_instructions=False,

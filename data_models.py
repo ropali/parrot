@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import Iterator, List
 from rich.text import Text
+
 
 @dataclass
 class Message:

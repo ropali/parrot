@@ -39,6 +39,9 @@
       },
       {
         "name": "gemma2"
+      },
+      {
+        "name": "qwen3:8b"
       }
     ]
   }

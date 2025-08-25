@@ -2,7 +2,7 @@ from phi.agent import Agent
 from phi.model.base import Model
 from phi.run.response import RunResponse
 from phi.tools.duckdb import DuckDbTools
-
+import pandas as pd
 import logging
 
 from agents.base_agent import ParrotAgent
@@ -26,6 +26,13 @@ class ParquetAgent(ParrotAgent):
 
         self.init_agent()
 
+    def _prepare_prompt(self) -> str:
+        df = pd.read_parquet(self.file_path)
+
+        head = df.head().to_string(index=False)
+        print(head)
+        return DUCKDB_SYSTEM_PROMPT.replace("$HEAD", head)
+
     def init_agent(self) -> None:
         tool = DuckDbTools()
         table_name, _ = tool.load_local_path_to_table(self.file_path)
@@ -41,7 +48,7 @@ class ParquetAgent(ParrotAgent):
                 "Don't add any additional information. Just answer the question.",
                 "If you can't answer the question, just say 'I don't know'.",
             ],
-            system_prompt=DUCKDB_SYSTEM_PROMPT,
+            system_prompt=self._prepare_prompt(),
             tools=[tool],
             show_tool_calls=False,
             add_datetime_to_instructions=False,
