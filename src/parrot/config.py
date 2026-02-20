@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.text import Text
 
-from prompter import ConfigPrompter
+from parrot.prompter import ConfigPrompter
 
 USER_DIR = os.path.expanduser("~/.parrot")
 

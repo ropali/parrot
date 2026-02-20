@@ -14,7 +14,8 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, DownloadColumn, T
 from rich.prompt import Prompt
 from rich.style import Style
 
-from exporter import ExportType
+from parrot.exporter import ExportType
+import ollama
 
 
 @dataclass
@@ -176,11 +177,18 @@ class ConfigPrompter:
             "provider": selected_provider,
         }
 
-        # Handle model selection if models exist
-        if provider_config.get("models"):
-            models = [m["name"] for m in provider_config["models"]]
-            if models:
-                prompts["model"] = self._prompt_model(models)
+        # Handle model selection
+        models = [m["name"] for m in provider_config.get("models", [])]
+
+        if selected_provider == "ollama":
+            # Fetch the model from local API dynamically
+            ollama_models = ollama.list().models
+            models = [m.model for m in ollama_models]           
+
+        if models:
+            prompts["model"] = self._prompt_model(models)
+        else:
+            prompts["model"] = self._prompt_model_name(default=provider_config.get("model"))
 
         # Dynamically prompt for all required fields in the provider's config
         for field, value in provider_config.items():
@@ -206,6 +214,10 @@ class ConfigPrompter:
             choices=models,
             transformer=lambda result: result.title()
         ).execute()
+
+    def _prompt_model_name(self, default: str = None) -> str:
+        """Prompt for a free-form model name."""
+        return Prompt.ask("Enter the model name", default=default)
 
     def _prompt_api_key(self, default: str = None) -> str:
         """Prompt for API key."""

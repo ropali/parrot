@@ -3,11 +3,11 @@ from typing import Any
 import pandas as pd
 from phi.model.base import Model
 
-from agents.csv_agent import CSVAgent
-from agents.sql_agent import SQLAgent
-from prompter import ConnectionDetails, SQLConnectionDetails, CSVConnectionDetails
-from agents.parquet_agent import ParquetAgent
-from prompter import ParquetConnectionDetails
+from parrot.agents.csv_agent import CSVAgent
+from parrot.agents.sql_agent import SQLAgent
+from parrot.prompter import ConnectionDetails, SQLConnectionDetails, CSVConnectionDetails
+from parrot.agents.parquet_agent import ParquetAgent
+from parrot.prompter import ParquetConnectionDetails
 
 
 class AgentsFactory:

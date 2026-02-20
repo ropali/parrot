@@ -116,7 +116,7 @@ class StyledChatResponse:
         for content_type, content in response:
             if content_type == 'text':
                 formatted_response.append(
-                    self.create_message_text(content, 'Parrot')
+                    self.create_message_text(content.strip(), 'Parrot')
                 )
             elif content_type == 'code':
                 formatted_response.append('\n')

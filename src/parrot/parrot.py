@@ -1,8 +1,8 @@
-from agents.factory import AgentsFactory
-from config import ProviderConfig
-from models import ModelLoader
-from prompter import ConnectionPrompter, DataSourcePrompter
-from interactive.chat_interface import ChatInterface
+from parrot.agents.factory import AgentsFactory
+from parrot.config import ProviderConfig
+from parrot.models import ModelLoader
+from parrot.prompter import ConnectionPrompter, DataSourcePrompter
+from parrot.interactive.chat_interface import ChatInterface
 
 
 class Parrot:

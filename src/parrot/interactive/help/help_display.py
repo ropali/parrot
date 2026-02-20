@@ -3,7 +3,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from interactive.help.help_content import HelpContent
+from parrot.interactive.help.help_content import HelpContent
 
 
 class HelpDisplay:

@@ -45,11 +45,11 @@ Parrot is a **terminal-based RAG + Agentic AI** tool that lets you interact with
 ### **Run in Interactive Mode**  
 Start a session to chat with your data:  
 ```bash
-uv run main.py
+uv run -m parrot.main
 ```  
 or  
 ```bash
-python main.py
+python -m parrot.main
 ```  
 
 ---
@@ -59,4 +59,3 @@ python main.py
 ✅ PostgreSQL  
 ✅ CSV Files  
 🚧 Coming Soon: MySQL, Parquet, Avro, DOCX, XLSX, PDF, TXT, JSON  
-

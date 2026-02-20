@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
-from agents.filters import TextFilter
-from agents.response import AgentResponse
+from parrot.agents.filters import TextFilter
+from parrot.agents.response import AgentResponse
 from phi.model.base import Model
 
 

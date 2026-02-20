@@ -5,9 +5,9 @@ from typing import Optional, Any
 
 from rich.text import Text
 
-from exporter import Exporter
-from interactive.help.help_display import HelpDisplay
-from prompter import ExportPrompter
+from parrot.exporter import Exporter
+from parrot.interactive.help.help_display import HelpDisplay
+from parrot.prompter import ExportPrompter
 
 
 class CommandResult(Enum):

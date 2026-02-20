@@ -5,9 +5,9 @@ from phi.tools.duckdb import DuckDbTools
 import pandas as pd
 import logging
 
-from agents.base_agent import ParrotAgent
-from agents.prompts import DUCKDB_SYSTEM_PROMPT
-from agents.response import AgentResponse
+from parrot.agents.base_agent import ParrotAgent
+from parrot.agents.prompts import DUCKDB_SYSTEM_PROMPT
+from parrot.agents.response import AgentResponse
 
 # Remove existing handlers from the 'phi' logger
 phi_logger = logging.getLogger("phi")

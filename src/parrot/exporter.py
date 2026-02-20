@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import List
 
-from data_models import Conversation
+from parrot.data_models import Conversation
 
 
 class ExportType(StrEnum):

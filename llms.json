@@ -24,25 +24,6 @@
   },
   "ollama": {
     "endpoint": "http://localhost:11434",
-    "models": [
-      {
-        "name": "llama3.3"
-      },
-      {
-        "name": "deepseek-r1"
-      },
-      {
-        "name": "phi4"
-      },
-      {
-        "name": "mistral"
-      },
-      {
-        "name": "gemma2"
-      },
-      {
-        "name": "qwen3:8b"
-      }
-    ]
+    "models": []
   }
 }

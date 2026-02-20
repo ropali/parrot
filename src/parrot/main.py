@@ -4,8 +4,8 @@ from typing import Optional
 import typer
 from rich.console import Console
 
-from config import Config
-from parrot import Parrot
+from parrot.config import Config
+from parrot.parrot import Parrot
 
 USER_DIR = os.path.expanduser("~/.parrot")
 API_KEYS_FILE = os.path.join(USER_DIR, "api_keys.json")

@@ -11,12 +11,12 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
 from rich.text import Text
 
-from data_models import Conversation, Message
-from interactive.chat_reponse import StyledChatResponse
-from interactive.commands import QuitCommand, HelpCommand, ExportCommand, CommandResult, CommandResponse
-from interactive.input_prompt import InputPrompt
-from interactive.listeners import ChatEventListener
-from interactive.message_processors import AgentMessageProcessor, MessageProcessor
+from parrot.data_models import Conversation, Message
+from parrot.interactive.chat_reponse import StyledChatResponse
+from parrot.interactive.commands import QuitCommand, HelpCommand, ExportCommand, CommandResult, CommandResponse
+from parrot.interactive.input_prompt import InputPrompt
+from parrot.interactive.listeners import ChatEventListener
+from parrot.interactive.message_processors import AgentMessageProcessor, MessageProcessor
 
 
 # State Pattern for Chat Interface
