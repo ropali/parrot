@@ -4,11 +4,70 @@ from typing import Optional
 import typer
 from rich.console import Console
 
-from parrot.config import Config
+from parrot.config import Config, ProviderConfig
 from parrot.parrot import Parrot
+from rich.console import Console
+from rich.text import Text
+from rich.align import Align
+from rich.table import Table
+
 
 USER_DIR = os.path.expanduser("~/.parrot")
 API_KEYS_FILE = os.path.join(USER_DIR, "api_keys.json")
+
+def display_banner(console: Console, config: ProviderConfig) -> None:
+        art = """
+    ██████╗  █████╗ ██████╗ ██████╗  ██████╗ ████████╗
+    ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔═══██╗╚══██╔══╝
+    ██████╔╝███████║██████╔╝██████╔╝██║   ██║   ██║   
+    ██╔═══╝ ██╔══██║██╔══██╗██╔══██╗██║   ██║   ██║   
+    ██║     ██║  ██║██║  ██║██║  ██║╚██████╔╝   ██║   
+    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝   ╚═╝   
+    """
+        console.clear()
+
+        console.print(
+            Align.center(Text(art, style="bold cyan"))
+        )
+
+        # Tagline
+        console.print(
+            Align.center(
+                Text("Your Intelligent AI Companion", style="italic bright_white")
+            )
+        )
+
+        console.print()
+        console.print(
+            Align.center(
+                Text("━" * 54, style="dim cyan")
+            )
+        )
+        console.print(
+            Align.center(
+                Text(f"v1.0.0  •  Model: {config.model}  •  Provider: {config.provider}", style="dim white")
+            )
+        )
+        console.print(
+            Align.center(
+                Text("━" * 54, style="dim cyan")
+            )
+        )
+        console.print()
+
+        # Quick-start hint bar
+        hints = Table.grid(padding=(0, 3))
+        hints.add_column(justify="center")
+        hints.add_column(justify="center")
+        hints.add_column(justify="center")
+        hints.add_row(
+            Text("💬  /chat", style="bright_cyan"),
+            Text("🛠️   /tools", style="bright_cyan"),
+            Text("❓  /help", style="bright_cyan"),
+        )
+        console.print(Align.center(hints))
+        console.print()
+
 
 
 def main(model_config: Optional[bool] = typer.Option(False, help="Model to use (e.g., gtp-40, sonet 3.5)")):
@@ -28,6 +87,7 @@ def main(model_config: Optional[bool] = typer.Option(False, help="Model to use (
             provider_config = config.prompt()
 
     try:
+        display_banner(console, provider_config)
         parrot = Parrot(provider_config)
 
         parrot.run()

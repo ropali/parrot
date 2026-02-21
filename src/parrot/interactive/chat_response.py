@@ -16,10 +16,9 @@ class StyledChatResponse:
         """
         self.console = console or Console()
 
-    def create_message_text(self,
-                            message: str,
-                            sender: str,
-                            styling: dict = None) -> Text:
+    def create_message_text(
+        self, message: str, sender: str, styling: dict = {}
+    ) -> Text:
         """
         Create a richly styled text message for chat interface.
 
@@ -33,48 +32,29 @@ class StyledChatResponse:
         """
         # Default styling configurations
         default_styles = {
-            'You': {
-                'color': 'green',
-                'emphasis': 'bold',
-                'prefix': '👤 > '
-            },
-            'Parrot': {
-                'color': 'magenta',
-                'emphasis': 'italic',
-                'prefix': '🦜 > '
-            },
-            'Error': {
-                'color': 'red',
-                'emphasis': 'bold',
-                'prefix': '❌ > '
-            }
+            "You": {"color": "green", "emphasis": "bold", "prefix": "👤 > "},
+            "Parrot": {"color": "magenta", "emphasis": "italic", "prefix": "🦜 > "},
+            "Error": {"color": "red", "emphasis": "bold", "prefix": "❌ > "},
         }
 
         # Merge default and custom styling
-        style_config = default_styles.get(sender, default_styles['Parrot'])
+        style_config = default_styles.get(sender, default_styles["Parrot"])
         style_config.update(styling or {})
 
         # Create styled text
         styled_text = Text()
 
         # Add prefix
-        styled_text.append(
-            Text(style_config['prefix'], style=style_config['color'])
-        )
+        styled_text.append(Text(style_config["prefix"], style=style_config["color"]))
 
         # Add message with emphasis
         styled_text.append(
-            Text(
-                message,
-                style=f"{style_config['color']} {style_config['emphasis']}"
-            )
+            Text(message, style=f"{style_config['color']} {style_config['emphasis']}")
         )
 
         return styled_text
 
-    def create_code_block(self,
-                          code: str,
-                          language: str = 'python') -> Panel:
+    def create_code_block(self, code: str, language: str = "python") -> Panel:
         """
         Create a syntax-highlighted code block.
 
@@ -85,21 +65,13 @@ class StyledChatResponse:
         Returns:
             A Rich Panel with syntax-highlighted code
         """
-        syntax = Syntax(
-            code,
-            language,
-            theme='monokai',
-            line_numbers=True
-        )
+        syntax = Syntax(code, language, theme="monokai", line_numbers=True)
 
-        return Panel(
-            syntax,
-            title=f"[bold]{language.upper()} Code",
-            border_style='dim'
-        )
+        return Panel(syntax, title=f"[bold]{language.upper()} Code", border_style="dim")
 
-    def format_complex_response(self,
-                                response: Union[str, List[Tuple[str, str]]]) -> Text:
+    def format_complex_response(
+        self, response: Union[str, List[Tuple[str, str]]]
+    ) -> Text:
         """
         Handle complex responses with multiple parts or types.
 
@@ -110,22 +82,18 @@ class StyledChatResponse:
             A Rich Text object representing the entire response
         """
         if isinstance(response, str):
-            return self.create_message_text(response, 'Parrot')
+            return self.create_message_text(response, "Parrot")
 
         formatted_response = Text()
         for content_type, content in response:
-            if content_type == 'text':
+            if content_type == "text":
                 formatted_response.append(
-                    self.create_message_text(content.strip(), 'Parrot')
+                    self.create_message_text(content.strip(), "Parrot")
                 )
-            elif content_type == 'code':
-                formatted_response.append('\n')
-                formatted_response.append(
-                    self.create_code_block(content)
-                )
-                formatted_response.append('\n')
-
-
+            elif content_type == "code":
+                formatted_response.append("\n")
+                formatted_response.append(self.create_code_block(content))
+                formatted_response.append("\n")
 
         return formatted_response
 

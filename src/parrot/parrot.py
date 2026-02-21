@@ -1,7 +1,8 @@
+import sys
 from parrot.agents.factory import AgentsFactory
 from parrot.config import ProviderConfig
 from parrot.models import ModelLoader
-from parrot.prompter import ConnectionPrompter, DataSourcePrompter
+from parrot.prompter import ConnectionPrompter, DataSourcePrompter, MainMenuPrompter
 from parrot.interactive.chat_interface import ChatInterface
 
 
@@ -23,7 +24,9 @@ class Parrot:
         """
         self.data_source_type = DataSourcePrompter().prompt()
 
-        model = ModelLoader.load(self.config.provider, self.config.model, self.config.api_key)
+        model = ModelLoader.load(
+            self.config.provider, self.config.model, self.config.api_key
+        )
 
         conn_prompter = ConnectionPrompter()
 
@@ -36,10 +39,14 @@ class Parrot:
         Launch the Textual-based chat interface.
         """
 
-        self.initialize_agent()
+        action = MainMenuPrompter().prompt()
+        if action == "connect":
+            self.initialize_agent()
 
-        if not self.agent:
-            raise ValueError("Agent is not initialized.")
+            if not self.agent:
+                raise ValueError("Agent is not initialized.")
 
-        app = ChatInterface()
-        app.run(self.agent)
+            app = ChatInterface()
+            app.run(self.agent)
+        else:
+            sys.exit(1)

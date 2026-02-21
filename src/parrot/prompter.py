@@ -3,19 +3,28 @@ import json
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Tuple, Union, Dict, List
+from typing import Dict, List, Tuple, Union
 
 import httpx
+import ollama
 import typer
-from InquirerPy import inquirer
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, DownloadColumn, TransferSpeedColumn, TimeRemainingColumn, \
-    BarColumn
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
 from rich.prompt import Prompt
 from rich.style import Style
+from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
+from InquirerPy.separator import Separator
 
 from parrot.exporter import ExportType
-import ollama
 
 
 @dataclass
@@ -28,6 +37,7 @@ class SQLConnectionDetails:
 
     def to_connection_string(self) -> str:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+
 
 @dataclass
 class FileConnectionDetails:
@@ -46,26 +56,30 @@ class FileConnectionDetails:
         console = Console()
 
         with Progress(
-                SpinnerColumn(style="dots2"),
-                TextColumn("[progress.description]{task.description}",
-                           style=Style(color=typer.colors.WHITE, italic=True)),
-                BarColumn(),
-                DownloadColumn(),
-                TransferSpeedColumn(),
-                TimeRemainingColumn(),
-                console=console,
-                transient=True
+            SpinnerColumn(style="dots2"),
+            TextColumn(
+                "[progress.description]{task.description}",
+                style=Style(color=typer.colors.WHITE, italic=True),
+            ),
+            BarColumn(),
+            DownloadColumn(),
+            TransferSpeedColumn(),
+            TimeRemainingColumn(),
+            console=console,
+            transient=True,
         ) as progress:
             try:
-
                 with httpx.Client(follow_redirects=True) as client:
-
                     with client.stream("GET", self.file_path, timeout=10.0) as response:
                         response.raise_for_status()
-                        total_size = int(response.headers.get('content-length', 0))
-                        task = progress.add_task(description="Downloading..", total=total_size or 1)
+                        total_size = int(response.headers.get("content-length", 0))
+                        task = progress.add_task(
+                            description="Downloading..", total=total_size or 1
+                        )
 
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=self.extension) as temp_file:
+                        with tempfile.NamedTemporaryFile(
+                            delete=False, suffix=self.extension
+                        ) as temp_file:
                             for chunk in response.iter_bytes(chunk_size=1024):
                                 temp_file.write(chunk)
                                 progress.update(task, advance=len(chunk))
@@ -82,16 +96,21 @@ class FileConnectionDetails:
 
             raise typer.Exit()
 
+
 @dataclass
 class ParquetConnectionDetails(FileConnectionDetails):
     extension: str = field(init=False, default=".parquet")
+
 
 @dataclass
 class CSVConnectionDetails(FileConnectionDetails):
     extension: str = field(init=False, default=".csv")
 
+
 # TODO: Explore Python's Protocol to enforce a common interface for connection details
-ConnectionDetails = Union[SQLConnectionDetails, CSVConnectionDetails, ParquetConnectionDetails]
+ConnectionDetails = Union[
+    SQLConnectionDetails, CSVConnectionDetails, ParquetConnectionDetails
+]
 
 
 class ConnectionPrompter:
@@ -114,10 +133,12 @@ class ConnectionPrompter:
         # TODO: test the connection before returning
         return SQLConnectionDetails(
             user=Prompt.ask("[blue]Database user[/]", default="postgres"),
-            password=Prompt.ask("[blue]Database password[/]", password=False, default="mysecretpassword"),
+            password=Prompt.ask(
+                "[blue]Database password[/]", password=False, default="mysecretpassword"
+            ),
             host=Prompt.ask("[blue]Database host[/]", default="172.17.0.4"),
             port=Prompt.ask("[blue]Database port[/]", default="5432"),
-            database=Prompt.ask("[blue]Database name[/]", default="netflix")
+            database=Prompt.ask("[blue]Database name[/]", default="netflix"),
         )
 
     def get_csv_file_path(self) -> CSVConnectionDetails:
@@ -141,7 +162,6 @@ class DataSourcePrompter:
             message="Select data source type:",
             choices=["SQL", "CSV", "PARQUET"],
             default="SQL",
-
         ).execute()
 
         return data_source_type.lower()
@@ -158,7 +178,7 @@ class ConfigPrompter:
 
         self.required_fields = {
             "api_key": self._prompt_api_key,
-            "endpoint": self._prompt_endpoint
+            "endpoint": self._prompt_endpoint,
         }
 
     def prompt(self) -> Dict[str, Prompt]:
@@ -183,12 +203,14 @@ class ConfigPrompter:
         if selected_provider == "ollama":
             # Fetch the model from local API dynamically
             ollama_models = ollama.list().models
-            models = [m.model for m in ollama_models]           
+            models = [m.model for m in ollama_models]
 
         if models:
             prompts["model"] = self._prompt_model(models)
         else:
-            prompts["model"] = self._prompt_model_name(default=provider_config.get("model"))
+            prompts["model"] = self._prompt_model_name(
+                default=provider_config.get("model")
+            )
 
         # Dynamically prompt for all required fields in the provider's config
         for field, value in provider_config.items():
@@ -204,7 +226,7 @@ class ConfigPrompter:
         return inquirer.select(
             message="Select a LLM provider:",
             choices=providers,
-            transformer=lambda result: result.title()
+            transformer=lambda result: result.title(),
         ).execute()
 
     def _prompt_model(self, models: List[str]) -> str:
@@ -212,7 +234,7 @@ class ConfigPrompter:
         return inquirer.select(
             message="Select a model:",
             choices=models,
-            transformer=lambda result: result.title()
+            transformer=lambda result: result.title(),
         ).execute()
 
     def _prompt_model_name(self, default: str = None) -> str:
@@ -227,7 +249,9 @@ class ConfigPrompter:
         """Prompt for endpoint URL."""
         return Prompt.ask("Enter the endpoint URL", default=default)
 
-    def add_field_prompt(self, field_name: str, prompt_func: callable, default: str = None):
+    def add_field_prompt(
+        self, field_name: str, prompt_func: callable, default: str = None
+    ):
         """
         Add a new field prompt handler.
 
@@ -236,7 +260,9 @@ class ConfigPrompter:
             prompt_func: Function that handles prompting for this field
             default: Default value for the field
         """
-        self.required_fields[field_name] = functools.partial(prompt_func, default=default)
+        self.required_fields[field_name] = functools.partial(
+            prompt_func, default=default
+        )
 
 
 class ExportPrompter:
@@ -249,7 +275,6 @@ class ExportPrompter:
             message="Select export type:",
             choices=["TEXT", "JSON", "CSV"],
             default="TEXT",
-
         ).execute()
 
         export_type = ExportType[export_type]
@@ -257,5 +282,27 @@ class ExportPrompter:
         # Ask file path
         file_path = Prompt.ask("Enter the export file path")
 
-
         return export_type, file_path
+
+
+class MainMenuPrompter:
+    """
+    A class to provide main menu option to the user
+    """
+
+    def prompt(self) -> str:
+        action = inquirer.select(
+            message="What do you want to do?",
+            choices=[
+                Choice("connect", name="Connect to data source."),
+                Choice("ingest", name="Ingest Files."),
+                Choice("list_chat_session", name="List All Chat Sessions."),
+                Choice("Quit", name="quit"),
+            ],
+            multiselect=False,
+            transformer=lambda result: (
+                f"{len(result)} region{'s' if len(result) > 1 else ''} selected"
+            ),
+        ).execute()
+
+        return action

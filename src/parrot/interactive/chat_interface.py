@@ -12,11 +12,20 @@ from rich.style import Style
 from rich.text import Text
 
 from parrot.data_models import Conversation, Message
-from parrot.interactive.chat_reponse import StyledChatResponse
-from parrot.interactive.commands import QuitCommand, HelpCommand, ExportCommand, CommandResult, CommandResponse
+from parrot.interactive.chat_response import StyledChatResponse
+from parrot.interactive.commands import (
+    QuitCommand,
+    HelpCommand,
+    ExportCommand,
+    CommandResult,
+    CommandResponse,
+)
 from parrot.interactive.input_prompt import InputPrompt
 from parrot.interactive.listeners import ChatEventListener
-from parrot.interactive.message_processors import AgentMessageProcessor, MessageProcessor
+from parrot.interactive.message_processors import (
+    AgentMessageProcessor,
+    MessageProcessor,
+)
 
 
 # State Pattern for Chat Interface
@@ -43,7 +52,7 @@ class ChatInterface:
         self.commands = {
             "/q": QuitCommand(),
             "/?": HelpCommand(),
-            "/export": ExportCommand()
+            "/export": ExportCommand(),
         }
 
     def set_message_processor(self, processor: MessageProcessor) -> None:
@@ -61,7 +70,9 @@ class ChatInterface:
 
     def add_message(self, message: str, sender: str) -> None:
         styled_message = self.chat_styler.create_message_text(message, sender)
-        new_message = Message(sender, styled_content=styled_message, raw_content=message)
+        new_message = Message(
+            sender, styled_content=styled_message, raw_content=message
+        )
         self.chat_history.append(new_message)
         self.notify_message_added(new_message)
 
@@ -83,8 +94,10 @@ class ChatInterface:
             return error_message
 
     def handle_command(self, cmd: str) -> CommandResponse:
-        command_type = next((cmd_type for cmd_type in self.commands.keys()
-                             if cmd.startswith(cmd_type)), None)
+        command_type = next(
+            (cmd_type for cmd_type in self.commands.keys() if cmd.startswith(cmd_type)),
+            None,
+        )
 
         if command_type:
             return self.commands[command_type].execute(self)
@@ -94,16 +107,15 @@ class ChatInterface:
     def run(self, agent: Agent) -> None:
         self.set_message_processor(AgentMessageProcessor(agent))
 
-        self.display_header()
-
         while True:
-
             try:
                 user_query = InputPrompt().ask(
                     ">>> ",
-                    FormattedText([
-                        ("#949494 italic", "Ask your question (/? for help)"),
-                    ])
+                    FormattedText(
+                        [
+                            ("#949494 italic", "Ask your question (/? for help)"),
+                        ]
+                    ),
                 )
 
                 if not user_query:
@@ -128,27 +140,18 @@ class ChatInterface:
 
     def _process_with_progress(self, query: str) -> None:
         with Progress(
-                SpinnerColumn(style="dots2"),
-                TextColumn(
-                    "[progress.description]{task.description}",
-                    style=Style(color=typer.colors.WHITE, italic=True),
-                ),
-                transient=True,
+            SpinnerColumn(style="dots2"),
+            TextColumn(
+                "[progress.description]{task.description}",
+                style=Style(color=typer.colors.WHITE, italic=True),
+            ),
+            transient=True,
         ) as progress:
             progress.add_task(description="Processing...", total=None)
             self.process_query(query)
 
     def _display_farewell(self) -> None:
         self.console.print("[bold red]Goodbye! 👋[/]")
-
-    def display_header(self) -> None:
-        self.console.clear()
-        header = Panel(
-            Text("Parrot 🦜: Talk to your data!", style="bold cyan", justify="center"),
-            style="blue",
-            expand=True,
-        )
-        self.console.print(header)
 
     def render_chat_history(self) -> None:
         for message in self.chat_history:
