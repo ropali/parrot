@@ -297,12 +297,10 @@ class MainMenuPrompter:
                 Choice("connect", name="Connect to data source."),
                 Choice("ingest", name="Ingest Files."),
                 Choice("list_chat_session", name="List All Chat Sessions."),
-                Choice("Quit", name="quit"),
+                Choice("quit", name="Quit"),
             ],
             multiselect=False,
-            transformer=lambda result: (
-                f"{len(result)} region{'s' if len(result) > 1 else ''} selected"
-            ),
+            transformer=lambda result: f"{result}",
         ).execute()
 
         return action

@@ -7,7 +7,8 @@ import pandas as pd
 import logging
 
 from parrot.agents.base_agent import ParrotAgent
-from parrot.agents.prompts import SQL_SYSTEM_PROMPT
+from parrot.agents.prompts import get_sql_system_prompt
+from parrot.agents.response import AgentResponse
 
 # Remove existing handlers from the 'phi' logger
 phi_logger = logging.getLogger("phi")
@@ -29,26 +30,20 @@ class CSVAgent(ParrotAgent):
         return pd.read_csv(self.file_path)
 
     def _prepare_prompt(self) -> str:
-        prepared_prompt = SQL_SYSTEM_PROMPT.replace(
-            "$HEAD", self._get_df().head().to_string(index=False)
+        columns = self._get_df().head().to_string(index=False)
+        return get_sql_system_prompt(
+            columns, output_format=AgentResponse().model_dump_json()
         )
-
-        return prepared_prompt
 
     def init_agent(self) -> None:
         self._agent = Agent(
             model=self.model,
             markdown=False,
-            instructions=[
-                "First always get the list of files",
-                "Then check the columns in the file",
-                "Then run the query to answer the question",
-            ],
             system_prompt=self._prepare_prompt(),
             tools=[CsvTools(csvs=[self.file_path])],
-            show_tool_calls=False,
-            add_datetime_to_instructions=False,
-            debug_mode=False,
+            show_tool_calls=True,
+            add_datetime_to_instructions=True,
+            debug_mode=True,
         )
 
     def run(self, input_text: str) -> RunResponse:

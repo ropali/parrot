@@ -3,7 +3,7 @@ from typing import Protocol
 
 # Strategy Pattern for Message Processing
 class MessageProcessor(Protocol):
-    def process(self, query: str) -> str:
+    def process(self, query: str) -> str | None:
         pass
 
 
@@ -17,3 +17,4 @@ class AgentMessageProcessor(MessageProcessor):
             return result.content if hasattr(result, "content") else str(result)
         except Exception as e:
             return f"Error processing query: {str(e)}"
+

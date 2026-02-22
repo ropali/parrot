@@ -6,7 +6,7 @@ import pandas as pd
 import logging
 
 from parrot.agents.base_agent import ParrotAgent
-from parrot.agents.prompts import DUCKDB_SYSTEM_PROMPT
+from parrot.agents.prompts import get_duckdb_system_prompt
 from parrot.agents.response import AgentResponse
 
 # Remove existing handlers from the 'phi' logger
@@ -31,7 +31,7 @@ class ParquetAgent(ParrotAgent):
 
         head = df.head().to_string(index=False)
         print(head)
-        return DUCKDB_SYSTEM_PROMPT.replace("$HEAD", head)
+        return get_duckdb_system_prompt(head)
 
     def init_agent(self) -> None:
         tool = DuckDbTools()

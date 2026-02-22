@@ -1,8 +1,8 @@
-from dataclasses import dataclass
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class AgentResponse:
-    content: str
-    error: str
-    raw_input: str
+class AgentResponse(BaseModel):
+    content: str = Field(default="", description="Actual answer generted by the LLM")
+    is_markedown_formatted: bool = Field(
+        default=False, description="Set to true if the content contains markdown format"
+    )
