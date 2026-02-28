@@ -41,7 +41,7 @@ class CSVAgent(ParrotAgent):
             markdown=False,
             system_prompt=self._prepare_prompt(),
             tools=[CsvTools(csvs=[self.file_path])],
-            show_tool_calls=True,
+            show_tool_calls=False,
             add_datetime_to_instructions=True,
             debug_mode=True,
         )

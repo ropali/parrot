@@ -4,6 +4,7 @@ from parrot.config import ProviderConfig
 from parrot.llm_loader import LLMModelLoader
 from parrot.prompter import ConnectionPrompter, DataSourcePrompter, MainMenuPrompter
 from parrot.interactive.chat_interface import ChatInterface
+from parrot.tui.chat_tui import ChatTUI
 
 
 class Parrot:
@@ -12,10 +13,10 @@ class Parrot:
     abstract interaction with models and agents.
     """
 
-    def __init__(self, config: ProviderConfig):
+    def __init__(self, config: ProviderConfig, use_tui: bool = False):
         self.config = config
         self.data_source_type = None
-
+        self.use_tui = use_tui
         self.agent = None
 
     def initialize_agent(self):
@@ -36,7 +37,7 @@ class Parrot:
 
     def run(self):
         """
-        Launch the Textual-based chat interface.
+        Launch the chat interface (TUI or CLI based on configuration).
         """
 
         action = MainMenuPrompter().prompt()
@@ -46,7 +47,11 @@ class Parrot:
             if not self.agent:
                 raise ValueError("Agent is not initialized.")
 
-            app = ChatInterface()
-            app.run(self.agent)
+            if self.use_tui:
+                app = ChatTUI(agent=self.agent, config=self.config)
+                app.run()
+            else:
+                app = ChatInterface()
+                app.run(self.agent)
         else:
             sys.exit(1)

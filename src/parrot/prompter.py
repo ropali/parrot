@@ -22,7 +22,6 @@ from rich.prompt import Prompt
 from rich.style import Style
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
-from InquirerPy.separator import Separator
 
 from parrot.exporter import ExportType
 

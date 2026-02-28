@@ -81,12 +81,12 @@ class ChatRepository:
         """Get a message by ID."""
         return self.db.query(ChatMessage).filter(ChatMessage.id == message_id).first()
 
-    def get_session_messages(self, session_id: uuid.UUID) -> List[ChatMessage]:
+    def get_session_messages(self, session_id: str) -> List[ChatMessage]:
         """Get all messages for a session in order."""
         return (
             self.db.query(ChatMessage)
             .filter(ChatMessage.session_id == session_id)
-            .order_by(ChatMessage.sequence)
+            .order_by(ChatMessage.created_at)
             .all()
         )
 

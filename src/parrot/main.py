@@ -65,6 +65,9 @@ def main(
     model_config: Optional[bool] = typer.Option(
         False, help="Model to use (e.g., gtp-40, sonet 3.5)"
     ),
+    use_tui: bool = typer.Option(
+        False, "--tui", help="Use the new Textual TUI interface"
+    ),
 ):
     """
     Parrot: SQL Query Agent with Natural Language Interface
@@ -85,7 +88,7 @@ def main(
 
     try:
         display_banner(console, provider_config)
-        parrot = Parrot(provider_config)
+        parrot = Parrot(provider_config, use_tui=use_tui)
 
         parrot.run()
     except Exception as e:
