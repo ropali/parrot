@@ -17,4 +17,3 @@ class AgentMessageProcessor(MessageProcessor):
             return result.content if hasattr(result, "content") else str(result)
         except Exception as e:
             return f"Error processing query: {str(e)}"
-

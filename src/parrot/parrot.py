@@ -1,7 +1,7 @@
 import sys
 from parrot.agents.factory import AgentsFactory
 from parrot.config import ProviderConfig
-from parrot.models import ModelLoader
+from parrot.llm_loader import LLMModelLoader
 from parrot.prompter import ConnectionPrompter, DataSourcePrompter, MainMenuPrompter
 from parrot.interactive.chat_interface import ChatInterface
 
@@ -24,7 +24,7 @@ class Parrot:
         """
         self.data_source_type = DataSourcePrompter().prompt()
 
-        model = ModelLoader.load(
+        model = LLMModelLoader.load(
             self.config.provider, self.config.model, self.config.api_key
         )
 

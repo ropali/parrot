@@ -1,3 +1,5 @@
+from parrot.rag.storage.db import SessionLocal
+from parrot.db.repositories.chat_repository import ChatRepository
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -6,7 +8,6 @@ import typer
 from phi.agent import Agent
 from prompt_toolkit.formatted_text import FormattedText
 from rich.console import Console
-from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.style import Style
 from rich.text import Text
@@ -21,7 +22,7 @@ from parrot.interactive.commands import (
     CommandResponse,
 )
 from parrot.interactive.input_prompt import InputPrompt
-from parrot.interactive.listeners import ChatEventListener
+from parrot.interactive.listeners import ChatEventListener, ChatMessageDBSaveListener
 from parrot.interactive.message_processors import (
     AgentMessageProcessor,
     MessageProcessor,
@@ -43,12 +44,22 @@ class ChatContext:
 
 class ChatInterface:
     def __init__(self):
+
+        self.db = SessionLocal()
+
         self.console = Console()
         self.chat_styler = StyledChatResponse(self.console)
         self.chat_history = Conversation()
+
         self.context = ChatContext()
         self.message_processor: Optional[MessageProcessor] = None
-        self.listeners: list[ChatEventListener] = []
+
+        self.chat_repo = ChatRepository(self.db)
+        self.session = self.chat_repo.create_session(None)
+
+        self.listeners: list[ChatEventListener] = [
+            ChatMessageDBSaveListener(repo=self.chat_repo)
+        ]
         self.commands = {
             "/q": QuitCommand(),
             "/?": HelpCommand(),
@@ -66,7 +77,7 @@ class ChatInterface:
 
     def notify_message_added(self, message: Message) -> None:
         for listener in self.listeners:
-            listener.on_message_added(message)
+            listener.on_message_added(message, self.session.id)
 
     def add_message(self, message: str, sender: str) -> None:
         styled_message = self.chat_styler.create_message_text(message, sender)
@@ -76,7 +87,7 @@ class ChatInterface:
         self.chat_history.append(new_message)
         self.notify_message_added(new_message)
 
-    def process_query(self, query: str) -> str:
+    def process_query(self, query: str) -> str | None:
         if not self.message_processor:
             raise ValueError("Message processor not set")
 

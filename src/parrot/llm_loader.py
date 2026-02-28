@@ -5,7 +5,7 @@ from phi.model.groq import Groq
 from phi.model.ollama import Ollama
 
 
-class ModelLoader:
+class LLMModelLoader:
     """
     Class responsible for loading different models based on the model name.
     """
