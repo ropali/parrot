@@ -2,4 +2,4 @@
 
 run:
 	@clear
-	@uv run -m parrot.main --tui
+	@uv run -m parrot.main

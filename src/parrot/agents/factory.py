@@ -22,7 +22,7 @@ class AgentsFactory:
         elif isinstance(connection_details, ParquetConnectionDetails):
             return self.create_parquet_agent(model, connection_details.file_path)
         else:
-            raise ValueError(f"Unsupported agent type: {model}")
+            raise ValueError(f"Unsupported connection details type: {type(connection_details)} - {connection_details}")
 
 
     def create_sql_agent(self, model: Model, connection_string) -> Any:

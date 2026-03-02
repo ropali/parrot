@@ -2,8 +2,7 @@ import sys
 from parrot.agents.factory import AgentsFactory
 from parrot.config import ProviderConfig
 from parrot.llm_loader import LLMModelLoader
-from parrot.prompter import ConnectionPrompter, DataSourcePrompter, MainMenuPrompter
-from parrot.interactive.chat_interface import ChatInterface
+from parrot.prompter import ConnectionPrompter, DataSourcePrompter
 from parrot.tui.chat_tui import ChatTUI
 
 
@@ -13,10 +12,9 @@ class Parrot:
     abstract interaction with models and agents.
     """
 
-    def __init__(self, config: ProviderConfig, use_tui: bool = False):
+    def __init__(self, config: ProviderConfig):
         self.config = config
         self.data_source_type = None
-        self.use_tui = use_tui
         self.agent = None
 
     def initialize_agent(self):
@@ -30,28 +28,15 @@ class Parrot:
         )
 
         conn_prompter = ConnectionPrompter()
-
         conn_details = conn_prompter.prompt(source_type=self.data_source_type)
 
         self.agent = AgentsFactory().create(model, conn_details)
+        return self.agent
 
     def run(self):
         """
-        Launch the chat interface (TUI or CLI based on configuration).
+        Launch the Textual TUI chat interface.
         """
-
-        action = MainMenuPrompter().prompt()
-        if action == "connect":
-            self.initialize_agent()
-
-            if not self.agent:
-                raise ValueError("Agent is not initialized.")
-
-            if self.use_tui:
-                app = ChatTUI(agent=self.agent, config=self.config)
-                app.run()
-            else:
-                app = ChatInterface()
-                app.run(self.agent)
-        else:
-            sys.exit(1)
+        # Always use TUI, no main menu
+        app = ChatTUI(agent=self.agent, config=self.config, parrot=self)
+        app.run()
