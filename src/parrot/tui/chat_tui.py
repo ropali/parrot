@@ -1,14 +1,16 @@
-"""Textual TUI for Parrot Chat with session sidebar and chat interface."""
-
+from parrot.agents.base_agent import ParrotAgent
+import json
 from datetime import datetime
 from typing import Optional
-import uuid
-import sys
 
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical, VerticalScroll, Container, Center, Middle
+from textual.containers import (
+    Horizontal,
+    Vertical,
+    VerticalScroll,
+    Container,
+)
 from textual.reactive import reactive
-from textual.worker import Worker, WorkerState
 from textual.widgets import (
     Button,
     Input,
@@ -17,12 +19,11 @@ from textual.widgets import (
     ListView,
     Markdown,
     Static,
-    Rule,
 )
 from textual.binding import Binding
 
 from parrot.db.repositories.chat_repository import ChatRepository
-from parrot.models.chat_session import ChatSession, ChatMessage
+from parrot.models.chat_session import ChatSession, ChatType
 from parrot.rag.storage.db import SessionLocal
 from parrot.interactive.message_processors import AgentMessageProcessor
 from parrot.tui.connect_screens import (
@@ -39,19 +40,38 @@ class ChatMessageWidget(Static):
         self.sender = sender
         self.content = content
         self.timestamp = timestamp
-        super().__init__(**kwargs)
+        sender_class = "from-error"
+        if sender == "You":
+            sender_class = "from-you"
+        elif sender == "Parrot":
+            sender_class = "from-parrot"
+        existing_classes = kwargs.pop("classes", "")
+        classes = " ".join(
+            filter(None, ["message-widget", sender_class, existing_classes])
+        )
+        super().__init__(classes=classes, **kwargs)
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="message-row"):
             # Avatar/icon column
-            avatar = "👤" if self.sender == "You" else "🦜" if self.sender == "Parrot" else "⚠️"
+            avatar = (
+                "👤"
+                if self.sender == "You"
+                else "🦜"
+                if self.sender == "Parrot"
+                else "⚠️"
+            )
             yield Label(avatar, classes="message-avatar")
 
             # Content column
             with Vertical(classes="message-body"):
                 with Horizontal(classes="message-meta"):
-                    yield Label(self.sender, classes=f"message-sender {self.sender.lower()}")
-                    yield Label(self.timestamp.strftime("%H:%M"), classes="message-time")
+                    yield Label(
+                        self.sender, classes=f"message-sender {self.sender.lower()}"
+                    )
+                    yield Label(
+                        self.timestamp.strftime("%H:%M"), classes="message-time"
+                    )
                 yield Markdown(self.content, classes="message-text")
 
 
@@ -74,8 +94,6 @@ class AutocompleteListItem(ListItem):
 
 
 class ChatTUI(App):
-    """Modern, compact Textual TUI for Parrot Chat with cyan theme."""
-
     BINDINGS = [
         Binding("ctrl+c", "quit", "Quit", show=False, priority=True),
         Binding("ctrl+q", "quit", "Quit", show=False),
@@ -87,41 +105,87 @@ class ChatTUI(App):
     # Command suggestions
     COMMANDS = [
         ("/connect", "Connect to a data source"),
-        ("/help", "Show available commands"),
-        ("/quit", "Quit the application"),
         ("/q", "Quit the application"),
         ("/?", "Show available commands"),
     ]
 
     CSS = """
-    /* Custom color definitions */
-    $parrot-primary: #689D6A;        /* 0.40784314, 0.6156863, 0.41568628 */
-    $parrot-primary-dark: #507A52;
-    $parrot-primary-darker: #38573A;
-    $parrot-primary-light: #80B582;
-    $parrot-primary-lighter: #98CDA9;
+    /* Modern palette */
+    $parrot-bg: #0f1214;
+    $parrot-panel: #151a1f;
+    $parrot-panel-2: #1b2228;
+    $parrot-border: #2b343c;
+    $parrot-muted: #9aa6b2;
+    $parrot-accent: #76c7a0;
+    $parrot-accent-strong: #58b889;
+    $parrot-accent-soft: #9fdcc0;
+    $parrot-on-accent: #0b0f0c;
 
     /* Main layout */
     Screen {
         layout: horizontal;
-        background: $surface-darken-2;
+        background: $parrot-bg;
+        color: $text;
+    }
+
+    /* Base controls */
+    Button {
+        border: round $parrot-border;
+        background: $parrot-panel-2;
+        color: $text;
+        padding: 0 1;
+        height: 3;
+        min-width: 10;
+        content-align: center middle;
+    }
+
+    Button:hover {
+        border: round $parrot-accent;
+        background: $parrot-panel;
+    }
+
+    Button:focus {
+        border: round $parrot-accent;
+    }
+
+    Button.-error {
+        background: $error;
+        color: $parrot-on-accent;
+        border: round $error;
+    }
+
+    Button.-error:hover {
+        border: round $error;
+        background: $error-darken-1;
+    }
+
+    Input {
+        border: round $parrot-border;
+        background: $parrot-panel-2;
+        color: $text;
+        padding: 0 1;
+    }
+
+    Input:focus {
+        border: round $parrot-accent;
     }
 
     /* Sidebar - compact and clean */
     #sidebar {
         width: 20%;
         height: 100%;
-        background: $surface-darken-1;
-        border-right: solid $parrot-primary-dark;
+        background: $parrot-panel;
+        border-right: solid $parrot-border;
     }
 
     #sidebar-header {
         height: auto;
         padding: 1;
-        background: $parrot-primary-dark;
+        background: $parrot-panel-2;
         color: $text;
         text-align: center;
         text-style: bold;
+        border-bottom: solid $parrot-border;
     }
 
     #session-list {
@@ -137,12 +201,13 @@ class ChatTUI(App):
 
     #new-session-btn {
         margin: 1;
-        height: auto;
-        background: $parrot-primary;
+        height: 3;
+        background: $parrot-accent-strong;
+        color: $parrot-on-accent;
     }
 
     #new-session-btn:hover {
-        background: $parrot-primary-light;
+        background: $parrot-accent;
     }
 
     /* Chat area */
@@ -154,16 +219,17 @@ class ChatTUI(App):
     #chat-header {
         height: auto;
         padding: 1;
-        background: $parrot-primary-darker;
+        background: $parrot-panel-2;
         color: $text;
         text-style: bold;
         text-align: center;
+        border-bottom: solid $parrot-border;
     }
 
     #messages-container {
         height: 1fr;
-        background: $surface-darken-2;
-        padding: 0 1;
+        background: $parrot-bg;
+        padding: 0 2;
     }
 
     #banner-view {
@@ -202,7 +268,7 @@ class ChatTUI(App):
     #loading-row {
         height: auto;
         padding: 0 1;
-        background: $surface-darken-2;
+        background: $parrot-bg;
         visibility: hidden;
     }
 
@@ -211,41 +277,45 @@ class ChatTUI(App):
     }
 
     #loading-text {
-        color: $parrot-primary-light;
+        color: $parrot-accent-soft;
         text-style: italic;
     }
 
     #input-area {
         height: auto;
-        padding: 1;
-        background: $surface-darken-1;
-        border-top: solid $parrot-primary-dark;
+        padding: 1 2;
+        background: $parrot-panel;
+        border-top: solid $parrot-border;
         position: relative;
     }
 
     #message-input {
         width: 1fr;
-        border: solid $parrot-primary-dark;
+        border: round $parrot-border;
+        background: $parrot-panel-2;
+        padding: 0 1;
     }
 
     #message-input:focus {
-        border: solid $parrot-primary;
+        border: round $parrot-accent;
     }
 
     #send-btn {
         margin-left: 1;
-        background: $parrot-primary;
+        height: 3;
+        background: $parrot-accent-strong;
+        color: $parrot-on-accent;
     }
 
     #send-btn:hover {
-        background: $parrot-primary-light;
+        background: $parrot-accent;
     }
 
     #autocomplete-dropdown {
         height: auto;
         max-height: 12;
-        background: $surface-darken-1;
-        border: solid $parrot-primary;
+        background: $parrot-panel;
+        border: round $parrot-border;
         visibility: hidden;
         margin-bottom: 1;
     }
@@ -255,7 +325,7 @@ class ChatTUI(App):
     }
 
     #autocomplete-dropdown {
-        background: $surface-darken-1;
+        background: $parrot-panel;
         border: none;
     }
 
@@ -268,11 +338,12 @@ class ChatTUI(App):
     }
 
     #autocomplete-dropdown > ListItem.--highlight {
-        background: $parrot-primary-dark;
+        background: $parrot-panel-2;
     }
 
     #autocomplete-dropdown > ListItem.--selected {
-        background: $parrot-primary;
+        background: $parrot-accent-strong;
+        color: $parrot-on-accent;
     }
 
     /* Message styling - compact */
@@ -292,11 +363,15 @@ class ChatTUI(App):
         width: 3;
         height: auto;
         content-align: center middle;
+        color: $parrot-muted;
     }
 
     .message-body {
         width: 1fr;
         height: auto;
+        background: $parrot-panel;
+        border: round $parrot-border;
+        padding: 0 1;
     }
 
     .message-meta {
@@ -310,11 +385,11 @@ class ChatTUI(App):
     }
 
     .message-sender.you {
-        color: $parrot-primary-lighter;
+        color: $parrot-accent-soft;
     }
 
     .message-sender.parrot {
-        color: $success;
+        color: $parrot-accent;
     }
 
     .message-sender.error {
@@ -322,7 +397,7 @@ class ChatTUI(App):
     }
 
     .message-time {
-        color: $text-muted;
+        color: $parrot-muted;
         margin-left: 1;
         text-style: dim;
     }
@@ -330,7 +405,7 @@ class ChatTUI(App):
     .message-text {
         color: $text;
         margin: 0;
-        padding: 0;
+        padding: 0 0 1 0;
     }
 
     .message-text > * {
@@ -339,7 +414,7 @@ class ChatTUI(App):
     }
 
     .loading-message {
-        color: $parrot-primary-light;
+        color: $parrot-accent-soft;
         text-style: italic;
         padding: 1 0;
     }
@@ -359,16 +434,17 @@ class ChatTUI(App):
     }
 
     ListView > ListItem.--highlight {
-        background: $parrot-primary-darker;
+        background: $parrot-panel-2;
     }
 
     ListView > ListItem.--selected {
-        background: $parrot-primary-dark;
+        background: $parrot-accent-strong;
+        color: $parrot-on-accent;
     }
 
     /* Placeholder */
     .placeholder {
-        color: $text-muted;
+        color: $parrot-muted;
         text-align: center;
         text-style: italic;
         padding: 2;
@@ -376,7 +452,7 @@ class ChatTUI(App):
 
     /* Banner styling */
     .banner-line {
-        color: $parrot-primary;
+        color: $parrot-accent;
         text-align: center;
         text-style: bold;
         height: auto;
@@ -385,18 +461,35 @@ class ChatTUI(App):
         width: 100%;
         content-align: center middle;
     }
+
+    /* Sender accenting */
+    ChatMessageWidget.from-you .message-body {
+        border: round $parrot-accent-strong;
+        background: $parrot-panel-2;
+    }
+
+    ChatMessageWidget.from-parrot .message-body {
+        border: round $parrot-border;
+        background: $parrot-panel;
+    }
+
+    ChatMessageWidget.from-error .message-body {
+        border: round $error;
+        background: $parrot-panel;
+    }
     """
 
     current_session_id: reactive[Optional[str]] = reactive(None)
     is_processing: reactive[bool] = reactive(False)
 
-    def __init__(self, agent=None, config=None, parrot=None, **kwargs):
-        self.agent = agent
+    def __init__(self, agent: ParrotAgent = None, config=None, parrot=None, **kwargs):
+        self.agent: ParrotAgent = agent
         self.config = config
         self.parrot = parrot
         self.db = SessionLocal()
         self.chat_repo = ChatRepository(self.db)
         self.sessions: list[ChatSession] = []
+        self.data_source = kwargs.get("data_source_type")
         super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
@@ -418,7 +511,10 @@ class ChatTUI(App):
                     yield Static("", id="banner-spacer-bottom")
                 # Chat messages view (shown when session selected)
                 with VerticalScroll(id="chat-messages"):
-                    yield Static("Select or create a session to start chatting", classes="placeholder")
+                    yield Static(
+                        "Select or create a session to start chatting",
+                        classes="placeholder",
+                    )
             with Horizontal(id="loading-row"):
                 yield Label("🦜 Parrot is thinking...", id="loading-text")
             # Autocomplete dropdown (shown above input when typing /)
@@ -517,7 +613,10 @@ class ChatTUI(App):
 
     def create_new_session(self) -> None:
         """Create a new chat session."""
-        session = self.chat_repo.create_session(title=f"Chat {len(self.sessions) + 1}")
+        session = self.chat_repo.create_session(
+            chat_type=ChatType.DATA_FILE, file_path=self.agent.file_path
+        )
+
         self.sessions.insert(0, session)
 
         session_list = self.query_one("#session-list", ListView)
@@ -546,7 +645,10 @@ class ChatTUI(App):
 
         if not messages:
             messages_container.mount(
-                Static("Start a conversation by typing a message below.", classes="placeholder")
+                Static(
+                    "Start a conversation by typing a message below.",
+                    classes="placeholder",
+                )
             )
         else:
             for msg in messages:
@@ -554,7 +656,9 @@ class ChatTUI(App):
 
         messages_container.scroll_end()
 
-    def add_message_widget(self, sender: str, content: str, timestamp: datetime) -> None:
+    def add_message_widget(
+        self, sender: str, content: str, timestamp: datetime
+    ) -> None:
         """Add a message widget to the chat."""
         messages_container = self.query_one("#chat-messages", VerticalScroll)
 
@@ -573,7 +677,9 @@ class ChatTUI(App):
         for child in list(messages_container.children):
             if isinstance(child, Static) and "loading-message" in child.classes:
                 return
-        messages_container.mount(Static("🦜 Parrot is thinking...", classes="loading-message"))
+        messages_container.mount(
+            Static("🦜 Parrot is thinking...", classes="loading-message")
+        )
         messages_container.scroll_end()
         messages_container.refresh(layout=True)
 
@@ -606,9 +712,7 @@ class ChatTUI(App):
         # Add user message
         timestamp = datetime.now()
         self.chat_repo.add_message(
-            session_id=self.current_session_id,
-            sender="You",
-            raw_content=content
+            session_id=self.current_session_id, sender="You", raw_content=content
         )
         self.add_message_widget("You", content, timestamp)
 
@@ -616,16 +720,20 @@ class ChatTUI(App):
         if self.agent:
             self.is_processing = True
             self._show_loading_message()
-            self.run_worker(self._process_agent_response_worker(content), exclusive=True)
+            self.run_worker(
+                self._process_agent_response_worker(content), exclusive=True
+            )
         else:
             # Show message that user needs to connect
             self.is_processing = True
             response_time = datetime.now()
-            response_content = "Not connected to any data source. Type /connect to connect."
+            response_content = (
+                "Not connected to any data source. Type /connect to connect."
+            )
             self.chat_repo.add_message(
                 session_id=self.current_session_id,
                 sender="System",
-                raw_content=response_content
+                raw_content=response_content,
             )
             self.add_message_widget("System", response_content, response_time)
             self.set_timer(0.2, self._stop_processing)
@@ -638,6 +746,7 @@ class ChatTUI(App):
         """Worker to simulate echo response."""
         self.is_processing = True
         import asyncio
+
         await asyncio.sleep(0.5)
 
         response_content = f"Echo: {content}"
@@ -646,7 +755,7 @@ class ChatTUI(App):
         self.chat_repo.add_message(
             session_id=self.current_session_id,
             sender="Parrot",
-            raw_content=response_content
+            raw_content=response_content,
         )
         self.add_message_widget("Parrot", response_content, response_time)
         self.is_processing = False
@@ -659,20 +768,26 @@ class ChatTUI(App):
             processor = AgentMessageProcessor(self.agent)
             response = await self.run_threaded(processor.process, query)
 
+            try:
+                resp = json.loads(response)
+            except Exception as e:
+                raise Exception from e
+
             timestamp = datetime.now()
+            agent_response = resp.get("content", "")
             self.chat_repo.add_message(
                 session_id=self.current_session_id,
                 sender="Parrot",
-                raw_content=response
+                raw_content=agent_response,
             )
-            self.add_message_widget("Parrot", response, timestamp)
+            self.add_message_widget("Parrot", agent_response, timestamp)
         except Exception as e:
             timestamp = datetime.now()
             error_msg = f"Error: {str(e)}"
             self.chat_repo.add_message(
                 session_id=self.current_session_id,
                 sender="Error",
-                raw_content=error_msg
+                raw_content=error_msg,
             )
             self.add_message_widget("Error", error_msg, timestamp)
         finally:
@@ -682,6 +797,7 @@ class ChatTUI(App):
     def run_threaded(self, func, *args, **kwargs):
         """Helper to run a blocking function in a thread."""
         import asyncio
+
         return asyncio.to_thread(func, *args, **kwargs)
 
     def action_quit(self) -> None:
@@ -746,9 +862,13 @@ class ChatTUI(App):
         if source_type == "sql":
             self.push_screen(SQLConnectionScreen(), self._on_connection_details)
         elif source_type == "csv":
-            self.push_screen(FileConnectionScreen(file_type="csv"), self._on_connection_details)
+            self.push_screen(
+                FileConnectionScreen(file_type="csv"), self._on_connection_details
+            )
         elif source_type == "parquet":
-            self.push_screen(FileConnectionScreen(file_type="parquet"), self._on_connection_details)
+            self.push_screen(
+                FileConnectionScreen(file_type="parquet"), self._on_connection_details
+            )
 
     def _on_connection_details(self, details) -> None:
         """Handle connection details and initialize agent."""
@@ -757,10 +877,10 @@ class ChatTUI(App):
 
         if self.parrot:
             # Set the data source type based on details
-            if hasattr(details, 'to_connection_string'):
+            if hasattr(details, "to_connection_string"):
                 self.parrot.data_source_type = "sql"
-            elif hasattr(details, 'extension'):
-                self.parrot.data_source_type = details.extension.lstrip('.')
+            elif hasattr(details, "extension"):
+                self.parrot.data_source_type = details.extension.lstrip(".")
 
             # Create the agent directly
             from parrot.llm_loader import LLMModelLoader
@@ -769,12 +889,14 @@ class ChatTUI(App):
             model = LLMModelLoader.load(
                 self.parrot.config.provider,
                 self.parrot.config.model,
-                self.parrot.config.api_key
+                self.parrot.config.api_key,
             )
             self.parrot.agent = AgentsFactory().create(model, details)
             self.agent = self.parrot.agent
 
-            self.notify(f"Connected to {self.parrot.data_source_type}!", severity="success")
+            self.notify(
+                f"Connected to {self.parrot.data_source_type}!", severity="success"
+            )
 
     def on_input_changed(self, event: Input.Changed) -> None:
         """Handle input changes for autocomplete."""
@@ -788,21 +910,20 @@ class ChatTUI(App):
         except Exception:
             # Dropdown not found, skip
             return
-        
+
         if text.startswith("/"):
             # Filter commands that match
             matching_commands = [
-                (cmd, desc) for cmd, desc in self.COMMANDS
-                if cmd.startswith(text)
+                (cmd, desc) for cmd, desc in self.COMMANDS if cmd.startswith(text)
             ]
-            
+
             if matching_commands:
                 dropdown.clear()
                 for cmd, desc in matching_commands:
                     dropdown.append(AutocompleteListItem(cmd, desc))
                 dropdown.add_class("visible")
                 return
-        
+
         # Hide dropdown if not matching
         dropdown.remove_class("visible")
 

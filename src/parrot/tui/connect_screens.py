@@ -1,9 +1,5 @@
-"""Textual screens for data source connection flow."""
-
-from typing import Optional
-
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical, Container, Center, Middle
+from textual.containers import Horizontal, Container, Center, Middle
 from textual.screen import Screen
 from textual.widgets import (
     Button,
@@ -19,7 +15,6 @@ from parrot.prompter import (
     SQLConnectionDetails,
     CSVConnectionDetails,
     ParquetConnectionDetails,
-    ConnectionDetails,
 )
 
 
@@ -31,28 +26,74 @@ class DataSourceSelectScreen(Screen):
     ]
 
     CSS = """
-    $parrot-primary: #689D6A;
-    $parrot-primary-dark: #507A52;
-    $parrot-primary-darker: #38573A;
-    $parrot-primary-light: #80B582;
-    $parrot-primary-lighter: #98CDA9;
+    $parrot-bg: #0f1214;
+    $parrot-panel: #151a1f;
+    $parrot-panel-2: #1b2228;
+    $parrot-border: #2b343c;
+    $parrot-muted: #9aa6b2;
+    $parrot-accent: #76c7a0;
+    $parrot-accent-strong: #58b889;
+    $parrot-accent-soft: #9fdcc0;
+    $parrot-on-accent: #0b0f0c;
 
     Screen {
         align: center middle;
+        background: $parrot-bg;
+    }
+
+    Button {
+        border: round $parrot-border;
+        background: $parrot-panel-2;
+        color: $text;
+        padding: 0 1;
+        height: 3;
+        min-width: 10;
+        content-align: center middle;
+    }
+
+    Button:hover {
+        border: round $parrot-accent;
+        background: $parrot-panel;
+    }
+
+    Button:focus {
+        border: round $parrot-accent;
+    }
+
+    Button.-error {
+        background: $error;
+        color: $parrot-on-accent;
+        border: round $error;
+    }
+
+    Button.-error:hover {
+        border: round $error;
+        background: $error-darken-1;
+    }
+
+    Input {
+        border: round $parrot-border;
+        background: $parrot-panel-2;
+        color: $text;
+        padding: 0 1;
+    }
+
+    Input:focus {
+        border: round $parrot-accent;
     }
 
     #select-container {
         width: 60;
         height: auto;
-        border: solid $parrot-primary-dark;
-        background: $surface-darken-1;
+        border: round $parrot-border;
+        background: $parrot-panel;
         padding: 1 2;
     }
 
     #select-title {
         text-align: center;
         text-style: bold;
-        color: $parrot-primary;
+        color: $parrot-accent;
         margin-bottom: 1;
     }
 
@@ -68,11 +109,12 @@ class DataSourceSelectScreen(Screen):
     }
 
     ListView > ListItem.--highlight {
-        background: $parrot-primary-dark;
+        background: $parrot-panel-2;
     }
 
     ListView > ListItem.--selected {
-        background: $parrot-primary;
+        background: $parrot-accent-strong;
+        color: $parrot-on-accent;
     }
 
     #cancel-btn {
@@ -89,7 +131,7 @@ class DataSourceSelectScreen(Screen):
                         ListItem(Label("📊 SQL Database")),
                         ListItem(Label("📄 CSV File")),
                         ListItem(Label("🗂️  Parquet File")),
-                        id="source-list"
+                        id="source-list",
                     )
                     yield Button("Cancel", id="cancel-btn", variant="error")
 
@@ -117,28 +159,32 @@ class SQLConnectionScreen(Screen):
     ]
 
     CSS = """
-    $parrot-primary: #689D6A;
-    $parrot-primary-dark: #507A52;
-    $parrot-primary-darker: #38573A;
-    $parrot-primary-light: #80B582;
-    $parrot-primary-lighter: #98CDA9;
+    $parrot-bg: #0f1214;
+    $parrot-panel: #151a1f;
+    $parrot-panel-2: #1b2228;
+    $parrot-border: #2b343c;
+    $parrot-muted: #9aa6b2;
+    $parrot-accent: #76c7a0;
+    $parrot-accent-strong: #58b889;
+    $parrot-accent-soft: #9fdcc0;
 
     Screen {
         align: center middle;
+        background: $parrot-bg;
     }
 
     #connect-container {
         width: 70;
         height: auto;
-        border: solid $parrot-primary-dark;
-        background: $surface-darken-1;
+        border: round $parrot-border;
+        background: $parrot-panel;
         padding: 1 2;
     }
 
     #connect-title {
         text-align: center;
         text-style: bold;
-        color: $parrot-primary;
+        color: $parrot-accent;
         margin-bottom: 1;
     }
 
@@ -151,15 +197,18 @@ class SQLConnectionScreen(Screen):
         width: 15;
         content-align: right middle;
         padding-right: 1;
+        color: $parrot-muted;
     }
 
     .input-field {
         width: 1fr;
-        border: solid $parrot-primary-dark;
+        border: round $parrot-border;
+        background: $parrot-panel-2;
+        padding: 0 1;
     }
 
     .input-field:focus {
-        border: solid $parrot-primary;
+        border: round $parrot-accent;
     }
 
     #button-row {
@@ -170,11 +219,12 @@ class SQLConnectionScreen(Screen):
 
     #connect-btn {
         margin-right: 1;
-        background: $parrot-primary;
+        background: $parrot-accent-strong;
+        color: $parrot-on-accent;
     }
 
     #connect-btn:hover {
-        background: $parrot-primary-light;
+        background: $parrot-accent;
     }
     """
 
@@ -186,23 +236,49 @@ class SQLConnectionScreen(Screen):
 
                     with Horizontal(classes="input-row"):
                         yield Label("User:", classes="input-label")
-                        yield Input(placeholder="postgres", value="postgres", id="user-input", classes="input-field")
+                        yield Input(
+                            placeholder="postgres",
+                            value="postgres",
+                            id="user-input",
+                            classes="input-field",
+                        )
 
                     with Horizontal(classes="input-row"):
                         yield Label("Password:", classes="input-label")
-                        yield Input(placeholder="password", value="mysecretpassword", password=True, id="password-input", classes="input-field")
+                        yield Input(
+                            placeholder="password",
+                            value="mysecretpassword",
+                            password=True,
+                            id="password-input",
+                            classes="input-field",
+                        )
 
                     with Horizontal(classes="input-row"):
                         yield Label("Host:", classes="input-label")
-                        yield Input(placeholder="localhost", value="172.17.0.4", id="host-input", classes="input-field")
+                        yield Input(
+                            placeholder="localhost",
+                            value="172.17.0.4",
+                            id="host-input",
+                            classes="input-field",
+                        )
 
                     with Horizontal(classes="input-row"):
                         yield Label("Port:", classes="input-label")
-                        yield Input(placeholder="5432", value="5432", id="port-input", classes="input-field")
+                        yield Input(
+                            placeholder="5432",
+                            value="5432",
+                            id="port-input",
+                            classes="input-field",
+                        )
 
                     with Horizontal(classes="input-row"):
                         yield Label("Database:", classes="input-label")
-                        yield Input(placeholder="database", value="netflix", id="database-input", classes="input-field")
+                        yield Input(
+                            placeholder="database",
+                            value="netflix",
+                            id="database-input",
+                            classes="input-field",
+                        )
 
                     with Horizontal(id="button-row"):
                         yield Button("Connect", id="connect-btn", variant="primary")
@@ -235,28 +311,33 @@ class FileConnectionScreen(Screen):
     ]
 
     CSS = """
-    $parrot-primary: #689D6A;
-    $parrot-primary-dark: #507A52;
-    $parrot-primary-darker: #38573A;
-    $parrot-primary-light: #80B582;
-    $parrot-primary-lighter: #98CDA9;
+    $parrot-bg: #0f1214;
+    $parrot-panel: #151a1f;
+    $parrot-panel-2: #1b2228;
+    $parrot-border: #2b343c;
+    $parrot-muted: #9aa6b2;
+    $parrot-accent: #76c7a0;
+    $parrot-accent-strong: #58b889;
+    $parrot-accent-soft: #9fdcc0;
+    $parrot-on-accent: #0b0f0c;
 
     Screen {
         align: center middle;
+        background: $parrot-bg;
     }
 
     #file-container {
         width: 70;
         height: auto;
-        border: solid $parrot-primary-dark;
-        background: $surface-darken-1;
+        border: round $parrot-border;
+        background: $parrot-panel;
         padding: 1 2;
     }
 
     #file-title {
         text-align: center;
         text-style: bold;
-        color: $parrot-primary;
+        color: $parrot-accent;
         margin-bottom: 1;
     }
 
@@ -269,15 +350,18 @@ class FileConnectionScreen(Screen):
         width: 12;
         content-align: right middle;
         padding-right: 1;
+        color: $parrot-muted;
     }
 
     .input-field {
         width: 1fr;
-        border: solid $parrot-primary-dark;
+        border: round $parrot-border;
+        background: $parrot-panel-2;
+        padding: 0 1;
     }
 
     .input-field:focus {
-        border: solid $parrot-primary;
+        border: round $parrot-accent;
     }
 
     #button-row {
@@ -288,11 +372,12 @@ class FileConnectionScreen(Screen):
 
     #connect-btn {
         margin-right: 1;
-        background: $parrot-primary;
+        background: $parrot-accent-strong;
+        color: $parrot-on-accent;
     }
 
     #connect-btn:hover {
-        background: $parrot-primary-light;
+        background: $parrot-accent;
     }
     """
 
@@ -309,7 +394,11 @@ class FileConnectionScreen(Screen):
 
                     with Horizontal(classes="input-row"):
                         yield Label("File Path:", classes="input-label")
-                        yield Input(placeholder=f"/path/to/file.{self.file_type}", id="path-input", classes="input-field")
+                        yield Input(
+                            placeholder=f"/path/to/file.{self.file_type}",
+                            id="path-input",
+                            classes="input-field",
+                        )
 
                     with Horizontal(id="button-row"):
                         yield Button("Connect", id="connect-btn", variant="primary")

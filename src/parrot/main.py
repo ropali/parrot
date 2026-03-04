@@ -84,7 +84,6 @@ def main(
             provider_config = config.prompt()
 
     try:
-        display_banner(console, provider_config)
         parrot = Parrot(provider_config)
 
         parrot.run()

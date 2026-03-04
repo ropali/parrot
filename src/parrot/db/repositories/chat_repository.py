@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 import uuid
 
-from parrot.models.chat_session import ChatSession, ChatMessage
+from parrot.models.chat_session import ChatSession, ChatMessage, ChatType
 
 
 class ChatRepository:
@@ -14,10 +14,19 @@ class ChatRepository:
 
     # Session operations
     def create_session(
-        self, title: Optional[str] = None, session_id: Optional[str] = None
+        self,
+        title: Optional[str] = None,
+        session_id: Optional[str] = None,
+        chat_type: ChatType = ChatType.DATA_FILE,
+        file_path: str | None = None,
     ) -> ChatSession:
         """Create a new chat session."""
-        session = ChatSession(id=session_id or str(uuid.uuid4()), title=title)
+        session = ChatSession(
+            id=session_id or str(uuid.uuid4()),
+            title=title,
+            chat_type=chat_type,
+            attached_file=file_path,
+        )
         self.db.add(session)
         self.db.commit()
         self.db.refresh(session)

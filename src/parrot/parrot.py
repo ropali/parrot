@@ -38,5 +38,9 @@ class Parrot:
         Launch the Textual TUI chat interface.
         """
         # Always use TUI, no main menu
-        app = ChatTUI(agent=self.agent, config=self.config, parrot=self)
+        app = ChatTUI(
+            agent=self.agent,
+            config=self.config,
+            parrot=self,
+        )
         app.run()

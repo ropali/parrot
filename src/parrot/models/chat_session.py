@@ -1,3 +1,4 @@
+from enum import Enum
 from datetime import datetime
 from typing import Optional, List
 from sqlalchemy import (
@@ -8,10 +9,16 @@ from sqlalchemy import (
     func,
     UniqueConstraint,
     Uuid,
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from parrot.db.base_model import Base
+
+
+class ChatType(str, Enum):
+    DATA_FILE = "data_source"
+    RAG = "rag"
 
 
 class ChatSession(Base):
@@ -21,6 +28,10 @@ class ChatSession(Base):
 
     id: Mapped[str] = mapped_column(Uuid(as_uuid=False), primary_key=True)
     title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    chat_type: Mapped[ChatType] = mapped_column(
+        SAEnum(ChatType, name="chat_type", native_enum=False)
+    )
+    attached_file: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), nullable=False, server_default=func.now()
     )
